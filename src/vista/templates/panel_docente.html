@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Asistencia - Docentes</title>
+    <title>Panel de Docente</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,13 +24,8 @@
         }
         h1 {
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             font-size: 2.5em;
-        }
-        .subtitle {
-            color: #666;
-            margin-bottom: 40px;
-            font-size: 1.2em;
         }
         .actions {
             display: flex;
@@ -46,7 +41,7 @@
             font-weight: bold;
             font-size: 16px;
             transition: transform 0.2s, box-shadow 0.2s;
-            min-width: 150px;
+            min-width: 200px;
         }
         .btn:hover {
             transform: translateY(-2px);
@@ -70,12 +65,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>Sistema de Asistencia - Docentes</h1>
-        <p class="subtitle">Gestión de asistencia exclusiva para docentes</p>
-        
+        <h1>Panel de Docente</h1>
         <div class="actions">
-            <a href="/login" class="btn btn-primary">Iniciar Sesión</a>
-            <a href="/registro" class="btn btn-secondary">Registrarse</a>
+            <a href="/gestionar-alumnos" class="btn btn-primary">Gestionar Alumnos</a>
+            <a href="/gestionar-sesion" class="btn btn-secondary">Gestionar Sesión de Asistencia</a>
+            <a href="/editar-docente" class="btn btn-primary">Editar Datos Personales</a>
         </div>
     </div>
 </body>

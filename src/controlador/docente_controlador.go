@@ -1,14 +1,10 @@
 package controlador
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"github.com/MetaDandy/Assistense-System/helper"
 	"github.com/MetaDandy/Assistense-System/src/modelo"
 	"github.com/MetaDandy/Assistense-System/src/vista"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type DocenteControlador struct {
@@ -17,18 +13,12 @@ type DocenteControlador struct {
 }
 
 type DocenteControladorInterfaz interface {
-	// API endpoints (JSON)
-	RegistrarDocente(w http.ResponseWriter, r *http.Request)
-	IniciarSesion(w http.ResponseWriter, r *http.Request)
-	ObtenerDocentePorID(w http.ResponseWriter, r *http.Request)
-	ActualizarDocente(w http.ResponseWriter, r *http.Request)
-
-	// HTML Templates (MVC Clásico)
 	MostrarInicio(w http.ResponseWriter, r *http.Request)
 	MostrarRegistro(w http.ResponseWriter, r *http.Request)
 	ProcesarRegistro(w http.ResponseWriter, r *http.Request)
 	MostrarLogin(w http.ResponseWriter, r *http.Request)
 	ProcesarLogin(w http.ResponseWriter, r *http.Request)
+	MostrarPanelDocente(w http.ResponseWriter, r *http.Request)
 }
 
 func NuevoDocenteControlador(modelos modelo.DocenteInterfaz) DocenteControladorInterfaz {
@@ -38,120 +28,10 @@ func NuevoDocenteControlador(modelos modelo.DocenteInterfaz) DocenteControladorI
 	}
 }
 
-func (dc *DocenteControlador) RegistrarDocente(w http.ResponseWriter, r *http.Request) {
-	var registro modelo.RegistrarDocenteDto
-
-	if err := json.NewDecoder(r.Body).Decode(&registro); err != nil {
-		helper.EnviarJson(w, http.StatusBadRequest, map[string]string{
-			"error": "JSON inválido",
-		})
-		return
-	}
-
-	docente, token, err := dc.modelos.RegistrarDocente(&registro)
-	if err != nil {
-		helper.EnviarJson(w, http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	respuesta := vista.DocenteARespuesta(docente)
-	respuesta.Token = token
-
-	helper.EnviarJson(w, http.StatusCreated, respuesta)
-}
-
-func (dc *DocenteControlador) IniciarSesion(w http.ResponseWriter, r *http.Request) {
-	var login modelo.IniciarSesionDto
-
-	if err := json.NewDecoder(r.Body).Decode(&login); err != nil {
-		helper.EnviarJson(w, http.StatusBadRequest, map[string]string{
-			"error": "JSON inválido",
-		})
-		return
-	}
-
-	docente, token, err := dc.modelos.IniciarSesion(login)
-	if err != nil {
-		helper.EnviarJson(w, http.StatusUnauthorized, map[string]string{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	respuesta := vista.DocenteARespuesta(docente)
-	respuesta.Token = token
-
-	helper.EnviarJson(w, http.StatusOK, respuesta)
-}
-
-func (dc *DocenteControlador) ObtenerDocentePorID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-
-	docenteID, err := uuid.Parse(id)
-	if err != nil {
-		helper.EnviarJson(w, http.StatusBadRequest, map[string]string{
-			"error": "ID inválido",
-		})
-		return
-	}
-
-	docente, err := dc.modelos.ObtenerDocentePorID(docenteID)
-	if err != nil {
-		helper.EnviarJson(w, http.StatusNotFound, map[string]string{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	respuesta := vista.DocenteARespuesta(docente)
-	helper.EnviarJson(w, http.StatusOK, respuesta)
-}
-
-func (dc *DocenteControlador) ActualizarDocente(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-
-	var actualizar modelo.ActualizarDocente
-	if err := json.NewDecoder(r.Body).Decode(&actualizar); err != nil {
-		helper.EnviarJson(w, http.StatusBadRequest, map[string]string{
-			"error": "JSON inválido",
-		})
-		return
-	}
-
-	docenteID, err := uuid.Parse(id)
-	if err != nil {
-		helper.EnviarJson(w, http.StatusBadRequest, map[string]string{
-			"error": "ID inválido",
-		})
-		return
-	}
-
-	docente, err := dc.modelos.ActualizarDocente(docenteID, &actualizar)
-	if err != nil {
-		helper.EnviarJson(w, http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	respuesta := vista.DocenteARespuesta(docente)
-	helper.EnviarJson(w, http.StatusOK, respuesta)
-}
-
-// ============================================================================
-// MÉTODOS PARA HTML TEMPLATES (MVC CLÁSICO)
-// ============================================================================
-
-// MostrarInicio muestra la página principal
 func (dc *DocenteControlador) MostrarInicio(w http.ResponseWriter, r *http.Request) {
 	dc.vistaHTML.RenderizarInicio(w, nil)
 }
 
-// MostrarRegistro muestra el formulario de registro HTML
 func (dc *DocenteControlador) MostrarRegistro(w http.ResponseWriter, r *http.Request) {
 	dc.vistaHTML.RenderizarRegistro(w, nil)
 }
@@ -163,13 +43,11 @@ func (dc *DocenteControlador) ProcesarRegistro(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Parsear formulario HTML
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error procesando formulario", http.StatusBadRequest)
 		return
 	}
 
-	// Crear DTO desde formulario
 	registro := modelo.RegistrarDocenteDto{
 		Correo:     r.FormValue("correo"),
 		Nombre:     r.FormValue("nombre"),
@@ -177,7 +55,6 @@ func (dc *DocenteControlador) ProcesarRegistro(w http.ResponseWriter, r *http.Re
 		Contraseña: r.FormValue("contraseña"),
 	}
 
-	// Validar confirmación de contraseña
 	confirmarContraseña := r.FormValue("confirmar_contraseña")
 	if registro.Contraseña != confirmarContraseña {
 		data := map[string]interface{}{
@@ -190,21 +67,21 @@ func (dc *DocenteControlador) ProcesarRegistro(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Procesar registro usando el modelo
 	docente, token, err := dc.modelos.RegistrarDocente(&registro)
-
-	data := map[string]interface{}{}
 	if err != nil {
-		data["Error"] = err.Error()
-		data["Correo"] = registro.Correo
-		data["Nombre"] = registro.Nombre
-		data["Apellidos"] = registro.Apellidos
-	} else {
-		data["Exito"] = true
-		data["Docente"] = vista.DocenteARespuesta(docente)
-		data["Token"] = token
+		data := map[string]interface{}{
+			"Error": err.Error(),
+		}
+		dc.vistaHTML.RenderizarRegistro(w, data)
+		return
 	}
 
+	// Enviar el ID del docente y el token al cliente
+	data := map[string]interface{}{
+		"Exito":   true,
+		"Docente": docente,
+		"Token":   token,
+	}
 	dc.vistaHTML.RenderizarRegistro(w, data)
 }
 
@@ -233,17 +110,20 @@ func (dc *DocenteControlador) ProcesarLogin(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Procesar login usando el modelo
-	docente, token, err := dc.modelos.IniciarSesion(login)
-
-	data := map[string]interface{}{}
+	_, _, err := dc.modelos.IniciarSesion(login)
 	if err != nil {
-		data["Error"] = err.Error()
-		data["Correo"] = login.Correo
-	} else {
-		data["Exito"] = true
-		data["Docente"] = vista.DocenteARespuesta(docente)
-		data["Token"] = token
+		data := map[string]interface{}{
+			"Error":  err.Error(),
+			"Correo": login.Correo,
+		}
+		dc.vistaHTML.RenderizarLogin(w, data)
+		return
 	}
 
-	dc.vistaHTML.RenderizarLogin(w, data)
+	// Redirigir al panel del docente
+	http.Redirect(w, r, "/panel-docente", http.StatusSeeOther)
+}
+
+func (dc *DocenteControlador) MostrarPanelDocente(w http.ResponseWriter, r *http.Request) {
+	dc.vistaHTML.RenderizarPanelDocente(w, nil)
 }

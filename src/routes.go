@@ -13,7 +13,6 @@ func SetupRoutes() *mux.Router {
 	docenteModelo := modelo.NuevoDocenteModelo(config.DB)
 	docenteControlador := controlador.NuevoDocenteControlador(docenteModelo)
 
-	// HTML Templates routes (MVC Clásico) - directamente en la raíz
 	// Página principal
 	r.HandleFunc("/", docenteControlador.MostrarInicio).Methods("GET")
 
@@ -24,6 +23,7 @@ func SetupRoutes() *mux.Router {
 	// Procesar formularios
 	r.HandleFunc("/registro", docenteControlador.ProcesarRegistro).Methods("POST")
 	r.HandleFunc("/login", docenteControlador.ProcesarLogin).Methods("POST")
+	r.HandleFunc("/panel-docente", docenteControlador.MostrarPanelDocente).Methods("GET")
 
 	return r
 }
