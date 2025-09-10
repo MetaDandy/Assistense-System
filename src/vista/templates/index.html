@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Asistencia Universitaria</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            color: #333;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        .actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 150px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-primary {
+            background-color: #2196F3;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1976D2;
+        }
+        .btn-secondary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #45a049;
+        }
+        .features {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .feature {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        .feature h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .feature p {
+            color: #666;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Asistencia Universitaria</h1>
+        <p class="subtitle">Gestión eficiente de asistencia para docentes y estudiantes</p>
+        
+        <div class="actions">
+            <a href="/login" class="btn btn-primary">Iniciar Sesión</a>
+            <a href="/registro" class="btn btn-secondary">Registrarse</a>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <h3>🎓 Para Docentes</h3>
+                <p>Registra y gestiona la asistencia de tus estudiantes de manera rápida y eficiente.</p>
+            </div>
+            <div class="feature">
+                <h3>📊 Reportes</h3>
+                <p>Genera reportes detallados de asistencia por estudiante, materia o período.</p>
+            </div>
+            <div class="feature">
+                <h3>🔒 Seguro</h3>
+                <p>Sistema seguro con autenticación JWT para proteger la información académica.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

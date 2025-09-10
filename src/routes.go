@@ -13,14 +13,17 @@ func SetupRoutes() *mux.Router {
 	docenteModelo := modelo.NuevoDocenteModelo(config.DB)
 	docenteControlador := controlador.NuevoDocenteControlador(docenteModelo)
 
-	api := r.PathPrefix("/api").Subrouter()
+	// HTML Templates routes (MVC Clásico) - directamente en la raíz
+	// Página principal
+	r.HandleFunc("/", docenteControlador.MostrarInicio).Methods("GET")
 
-	docentes := api.PathPrefix("/docente").Subrouter()
+	// Formularios directamente en localhost:8000
+	r.HandleFunc("/registro", docenteControlador.MostrarRegistro).Methods("GET")
+	r.HandleFunc("/login", docenteControlador.MostrarLogin).Methods("GET")
 
-	docentes.HandleFunc("/registro", docenteControlador.RegistrarDocente).Methods("POST")
-	docentes.HandleFunc("/login", docenteControlador.IniciarSesion).Methods("POST")
-	docentes.HandleFunc("/{id}", docenteControlador.ObtenerDocentePorID).Methods("GET")
-	docentes.HandleFunc("/{id}", docenteControlador.ActualizarDocente).Methods("PUT")
+	// Procesar formularios
+	r.HandleFunc("/registro", docenteControlador.ProcesarRegistro).Methods("POST")
+	r.HandleFunc("/login", docenteControlador.ProcesarLogin).Methods("POST")
 
 	return r
 }

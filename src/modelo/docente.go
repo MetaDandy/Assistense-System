@@ -22,10 +22,11 @@ type Docente struct {
 }
 
 type RegistrarDocenteDto struct {
-	Correo     string `json:"correo" binding:"required,email"`
-	Nombre     string `json:"nombre" binding:"required"`
-	Apellidos  string `json:"apellidos" binding:"required"`
-	Contraseña string `json:"contraseña" binding:"required,min=6"`
+	Correo              string `json:"correo" binding:"required,email"`
+	Nombre              string `json:"nombre" binding:"required"`
+	Apellidos           string `json:"apellidos" binding:"required"`
+	Contraseña          string `json:"contraseña" binding:"required,min=6"`
+	ConfirmarContraseña string `json:"confirmar_contraseña,omitempty"` // Solo para formularios HTML
 }
 
 type IniciarSesionDto struct {
