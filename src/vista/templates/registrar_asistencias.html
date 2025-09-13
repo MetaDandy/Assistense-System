@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Asistencias</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .navbar {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .nav-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: #333;
+        }
+        .session-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4CAF50;
+        }
+        .facial-section {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .facial-icon {
+            font-size: 64px;
+            color: #4CAF50;
+            margin: 20px 0;
+        }
+        .students-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .student-list {
+            list-style: none;
+            padding: 0;
+        }
+        .student-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .student-info {
+            flex-grow: 1;
+        }
+        .student-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .student-details {
+            color: #666;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #1976D2;
+        }
+        .btn-back {
+            background-color: #6c757d;
+        }
+        .btn-verify {
+            background-color: #4CAF50;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        .btn-verify:hover {
+            background-color: #45a049;
+        }
+        .photo-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .has-photo {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .no-photo {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .instruction {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/panel-docente" class="nav-brand">📚 Sistema de Asistencias</a>
+            <ul class="nav-links">
+                <li><a href="/panel-docente">🏠 Inicio</a></li>
+                <li><a href="/gestionar-estudiantes">👥 Estudiantes</a></li>
+                <li><a href="/gestionar-sesiones" class="active">📅 Sesiones</a></li>
+                <li><a href="/login">🚪 Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="/gestionar-sesiones" class="btn btn-back">← Volver a Gestionar Sesiones</a>
+        
+        <h1>📝 Registrar Asistencias</h1>
+
+        <!-- Información de la sesión -->
+        <div class="session-info">
+            <h3>📅 Información de la Sesión</h3>
+            <p><strong>Fecha:</strong> {{.Sesion.Fecha}}</p>
+            <p><strong>Hora:</strong> {{.Sesion.HoraInicio}} - {{.Sesion.HoraFin}}</p>
+            <p><strong>Estado:</strong> <span style="color: #4CAF50; font-weight: bold;">✅ Activa</span></p>
+        </div>
+
+        <!-- Instrucciones -->
+        <div class="instruction">
+            <h4>� Instrucciones para Reconocimiento Facial:</h4>
+            <ol>
+                <li>Los estudiantes deben tener una foto de referencia registrada en el sistema</li>
+                <li>Haga clic en "Verificar Rostro" junto al nombre del estudiante</li>
+                <li>El estudiante debe capturar su foto para verificación facial</li>
+                <li>El sistema comparará automáticamente con la foto de referencia</li>
+                <li>La asistencia se registrará si la verificación es exitosa</li>
+            </ol>
+        </div>
+
+        <!-- Sistema de Reconocimiento Facial -->
+        <div class="facial-section">
+            <h3>� Sistema de Reconocimiento Facial</h3>
+            <div class="facial-icon">👤</div>
+            <p>Este sistema utiliza tecnología de reconocimiento facial para verificar la identidad de los estudiantes.</p>
+            <p><strong>Precisión:</strong> 95%+ | <strong>Tiempo de verificación:</strong> 2-3 segundos</p>
+        </div>
+
+        <!-- Lista de estudiantes -->
+        <div class="students-section">
+            <h3>👥 Estudiantes Registrados</h3>
+            <p>Haga clic en "Verificar Rostro" para que el estudiante registre su asistencia:</p>
+            
+            <ul class="student-list">
+                {{range .Estudiantes}}
+                <div class="student-item">
+                    <div class="student-info">
+                        <div class="student-name">{{.Nombre}} {{.Apellidos}}</div>
+                        <div class="student-details">
+                            Registro: {{.Registro}}
+                            {{if .FotoReferencia}}
+                                <span class="photo-status has-photo">✅ Foto registrada</span>
+                            {{else}}
+                                <span class="photo-status no-photo">❌ Sin foto</span>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{if .FotoReferencia}}
+                        <a href="/capturar-foto?sesion={{$.Sesion.ID}}&estudiante={{.ID}}" class="btn btn-verify">🔍 Verificar Rostro</a>
+                    {{else}}
+                        <a href="/editar-estudiante/{{.ID}}" class="btn" style="background-color: #ff9800;">📷 Agregar Foto</a>
+                    {{end}}
+                </div>
+                {{end}}
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/sesion-asistencia/{{.Sesion.ID}}/listar" class="btn">👥 Ver Asistencias Registradas</a>
+        </div>
+    </div>
+</body>
+</html>

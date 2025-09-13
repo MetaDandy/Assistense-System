@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleccionar Estudiante para Asistencia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: #333;
+            text-align: center;
+        }
+        .session-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #4CAF50;
+            text-align: left;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: white;
+            color: #333;
+        }
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px;
+            transition: background-color 0.3s;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .instructions {
+            background-color: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+            text-align: left;
+        }
+        .instructions h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .student-count {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👥 Seleccionar Estudiante</h1>
+        
+        <div class="session-info">
+            <h3>📅 Sesión de Asistencia</h3>
+            <p><strong>Fecha:</strong> {{.Sesion.Fecha}}</p>
+            <p><strong>Hora:</strong> {{.Sesion.HoraInicio}} - {{.Sesion.HoraFin}}</p>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Instrucciones para Reconocimiento Facial:</h3>
+            <ol>
+                <li><strong>Seleccione</strong> el estudiante de la lista</li>
+                <li><strong>Haga clic en "Verificar Rostro"</strong></li>
+                <li>El estudiante debe tener una <strong>foto de referencia</strong> registrada</li>
+                <li>Se abrirá la cámara para capturar la foto de verificación</li>
+                <li>El sistema comparará automáticamente con la foto de referencia</li>
+                <li>La asistencia se registrará si la verificación es exitosa</li>
+            </ol>
+        </div>
+
+        {{if .Estudiantes}}
+        <div class="student-count">
+            📊 Total de estudiantes registrados: {{len .Estudiantes}}
+        </div>
+
+        <div class="form-container">
+            <form action="/sesion-asistencia/{{.Sesion.ID}}/registrar" method="POST">
+                <div class="form-group">
+                    <label for="estudiante_id">🎓 Seleccionar Estudiante:</label>
+                    <select name="estudiante_id" id="estudiante_id" required>
+                        <option value="">-- Seleccione un estudiante --</option>
+                        {{range .Estudiantes}}
+                        <option value="{{.ID}}">{{.Nombre}} {{.Apellidos}} ({{.Registro}})</option>
+                        {{end}}
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn">� Verificar Rostro del Estudiante</button>
+            </form>
+        </div>
+        {{else}}
+        <div class="form-container">
+            <p style="color: #dc3545; font-size: 18px;">⚠️ No hay estudiantes registrados en el sistema</p>
+            <p>Primero debe registrar estudiantes antes de poder usar el reconocimiento facial.</p>
+            <a href="/gestionar-estudiantes" class="btn">👥 Gestionar Estudiantes</a>
+        </div>
+        {{end}}
+
+        <div>
+            <a href="/sesion-asistencia/{{.Sesion.ID}}" class="btn btn-secondary">← Volver al Detalle</a>
+            <a href="/gestionar-sesiones" class="btn btn-secondary">🏠 Gestionar Sesiones</a>
+        </div>
+    </div>
+
+    <script>
+        // Mejorar la experiencia del selector
+        document.getElementById('estudiante_id').addEventListener('change', function() {
+            const button = document.querySelector('button[type="submit"]');
+            if (this.value) {
+                button.style.backgroundColor = '#4CAF50';
+                button.innerHTML = '� Verificar Rostro de ' + this.options[this.selectedIndex].text.split(' (')[0];
+            } else {
+                button.style.backgroundColor = '#6c757d';
+                button.innerHTML = '� Verificar Rostro del Estudiante';
+            }
+        });
+    </script>
+</body>
+</html>

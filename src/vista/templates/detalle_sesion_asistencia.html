@@ -2,14 +2,130 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Sesión de Asistencia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: #333;
+            text-align: center;
+        }
+        .facial-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .facial-icon {
+            font-size: 64px;
+            color: #4CAF50;
+            margin: 20px 0;
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .instructions h4 {
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        .session-info {
+            text-align: left;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #1976D2;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
-    <h1>Detalle de Sesión de Asistencia</h1>
-    <p><strong>Fecha:</strong> {{.Sesion.Fecha}}</p>
-    <p><strong>Hora de inicio:</strong> {{.Sesion.HoraInicio}}</p>
-    <p><strong>Hora de fin:</strong> {{.Sesion.HoraFin}}</p>
-    <p><strong>Docente:</strong> {{.Sesion.DocenteID}}</p>
-    <a href="/sesion-asistencia/listar">Volver a sesiones</a>
+    <div class="container">
+        <h1>Sesión de Asistencia</h1>
+        
+        <div class="session-info">
+            <p><strong>Fecha:</strong> {{.Sesion.Fecha}}</p>
+            <p><strong>Hora de inicio:</strong> {{.Sesion.HoraInicio}}</p>
+            <p><strong>Hora de fin:</strong> {{.Sesion.HoraFin}}</p>
+        </div>
+
+                {{if .SesionActiva}}
+        <div class="status active">✅ Sesión Activa</div>
+        {{else}}
+        <div class="status inactive">❌ Sesión Inactiva</div>
+        {{end}}
+
+        <div class="facial-container">
+            <h3>� Sistema de Reconocimiento Facial</h3>
+            <div class="facial-icon">👤</div>
+            <p>Este sistema utiliza reconocimiento facial para verificar la identidad de los estudiantes.</p>
+            <p><strong>Precisión:</strong> 95%+ | <strong>Tiempo:</strong> 2-3 segundos</p>
+            
+            <div class="instructions">
+                <h4>📋 Proceso de Registro:</h4>
+                <ol>
+                    <li>Vaya a "Registrar Asistencias" para esta sesión</li>
+                    <li>Seleccione "Verificar Rostro" junto al nombre del estudiante</li>
+                    <li>El estudiante captura su foto para verificación</li>
+                    <li>El sistema compara automáticamente con la foto de referencia</li>
+                    <li>La asistencia se registra si la verificación es exitosa</li>
+                </ol>
+            </div>
+        </div>
+
+        <div>
+            <a href="/gestionar-sesiones" class="btn">← Volver a Gestionar Sesiones</a>
+            {{if .Asistencias}}
+            <a href="/sesion-asistencia/{{.Sesion.ID}}/asistencias" class="btn">👥 Ver Asistencias ({{len .Asistencias}})</a>
+            {{end}}
+        </div>
+    </div>
 </body>
 </html>

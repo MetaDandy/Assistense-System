@@ -3,28 +3,32 @@ package modelo
 import (
 	"fmt"
 
+	"github.com/MetaDandy/Assistense-System/helper"
 	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type Estudiante struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey;"`
-	Nombre    string    `gorm:"type:varchar(100);not null"`
-	Apellidos string    `gorm:"type:varchar(100);not null"`
-	Registro  string    `gorm:"type:varchar(10);uniqueIndex;not null"`
+	ID             uuid.UUID `gorm:"type:uuid;primaryKey;"`
+	Nombre         string    `gorm:"type:varchar(100);not null"`
+	Apellidos      string    `gorm:"type:varchar(100);not null"`
+	Registro       string    `gorm:"type:varchar(10);uniqueIndex;not null"`
+	FotoReferencia string    `gorm:"type:text"` // Base64 de la foto de referencia para reconocimiento facial
 }
 
 type RegistrarEstudianteDto struct {
-	Nombre    string `json:"nombre" binding:"required"`
-	Apellidos string `json:"apellidos" binding:"required"`
-	Registro  string `json:"registro" binding:"required,max=10"`
+	Nombre         string `json:"nombre" binding:"required"`
+	Apellidos      string `json:"apellidos" binding:"required"`
+	Registro       string `json:"registro" binding:"required,max=10"`
+	FotoReferencia string `json:"foto_referencia,omitempty"` // Base64 de la foto
 }
 
 type ActualizarEstudiante struct {
-	Nombre    *string `json:"nombre" binding:"required"`
-	Apellidos *string `json:"apellidos" binding:"required"`
-	Registro  *string `json:"registro" binding:"required,max=10"`
+	Nombre         *string `json:"nombre" binding:"required"`
+	Apellidos      *string `json:"apellidos" binding:"required"`
+	Registro       *string `json:"registro" binding:"required,max=10"`
+	FotoReferencia *string `json:"foto_referencia,omitempty"`
 }
 
 type EstudianteInterfaz interface {
@@ -49,6 +53,13 @@ func (em *EstudianteModelo) RegistrarEstudiante(estudiante *RegistrarEstudianteD
 		return nil, gorm.ErrRegistered
 	}
 
+	// Validar foto de referencia si se proporciona
+	if estudiante.FotoReferencia != "" {
+		if err := helper.ValidarImagenBase64(estudiante.FotoReferencia); err != nil {
+			return nil, fmt.Errorf("foto de referencia inválida: %v", err)
+		}
+	}
+
 	nuevoEstudiante := Estudiante{}
 	copier.Copy(&nuevoEstudiante, estudiante)
 	nuevoEstudiante.ID = uuid.New()
@@ -65,6 +76,13 @@ func (em *EstudianteModelo) ActualizarEstudiante(id uuid.UUID, estudiante *Actua
 
 	if err := em.db.First(&existente, "id = ?", id).Error; err != nil {
 		return nil, err
+	}
+
+	// Validar foto de referencia si se proporciona
+	if estudiante.FotoReferencia != nil && *estudiante.FotoReferencia != "" {
+		if err := helper.ValidarImagenBase64(*estudiante.FotoReferencia); err != nil {
+			return nil, fmt.Errorf("foto de referencia inválida: %v", err)
+		}
 	}
 
 	opt := copier.Option{

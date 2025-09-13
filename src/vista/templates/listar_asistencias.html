@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Asistencias</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: #333;
+        }
+        .session-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #2196F3;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #1976D2;
+        }
+        .btn-back {
+            background-color: #6c757d;
+        }
+        .btn-back:hover {
+            background-color: #5a6268;
+        }
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+        .location-info {
+            font-size: 12px;
+            color: #666;
+        }
+        .datetime {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/gestionar-sesiones" class="btn btn-back">← Volver a Gestionar Sesiones</a>
+        
+        <h1>👥 Lista de Asistencias</h1>
+
+        <!-- Información de la sesión -->
+        <div class="session-info">
+            <h3>📅 Información de la Sesión</h3>
+            <p><strong>Fecha:</strong> {{.Sesion.Fecha}}</p>
+            <p><strong>Hora:</strong> {{.Sesion.HoraInicio}} - {{.Sesion.HoraFin}}</p>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{.TotalAsistencias}}</div>
+                <div class="stat-label">Asistencias Registradas</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                <div class="stat-number">{{len .Asistencias}}</div>
+                <div class="stat-label">Estudiantes Presentes</div>
+            </div>
+        </div>
+
+        <!-- Tabla de asistencias -->
+        {{if .Asistencias}}
+        <table>
+            <thead>
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Fecha y Hora</th>
+                    <th>Similitud</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Asistencias}}
+                <tr>
+                    <td>
+                        <strong>{{.EstudianteNombre}}</strong>
+                    </td>
+                    <td class="datetime">{{.FechaHora}}</td>
+                    <td>
+                        <div class="location-info">
+                            Similitud: {{printf "%.1f%%" .Similitud}}
+                        </div>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <div class="no-data">
+            <h3>📝 No hay asistencias registradas</h3>
+            <p>Aún no se han registrado asistencias para esta sesión.</p>
+            <a href="/sesion-asistencia/{{.Sesion.ID}}/registrar" class="btn">📝 Ir a Registrar Asistencias</a>
+        </div>
+        {{end}}
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/sesion-asistencia/{{.Sesion.ID}}/registrar" class="btn">📝 Registrar Más Asistencias</a>
+            <a href="/sesion-asistencia/{{.Sesion.ID}}" class="btn">👁️ Ver Detalle de Sesión</a>
+        </div>
+    </div>
+</body>
+</html>

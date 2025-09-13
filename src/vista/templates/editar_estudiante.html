@@ -7,14 +7,54 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
         }
+        .navbar {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .nav-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
         .container {
+            max-width: 800px;
+            margin: 20px auto;
             background-color: rgba(255, 255, 255, 0.95);
             padding: 40px;
             border-radius: 15px;
@@ -55,12 +95,65 @@
         button:hover {
             background-color: #1976D2;
         }
+        .foto-section {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+        .foto-section h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        #video {
+            width: 300px;
+            height: 225px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+        }
+        #canvas {
+            display: none;
+        }
+        .captured-photo {
+            width: 300px;
+            height: 225px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            display: none;
+        }
+        .camera-btn {
+            background-color: #4CAF50;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .camera-btn:hover {
+            background-color: #45a049;
+        }
+        .camera-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/panel-docente" class="nav-brand">📚 Sistema de Asistencias</a>
+            <ul class="nav-links">
+                <li><a href="/panel-docente">🏠 Inicio</a></li>
+                <li><a href="/gestionar-estudiantes" class="active">👥 Estudiantes</a></li>
+                <li><a href="/gestionar-sesiones">📅 Sesiones</a></li>
+                <li><a href="/login">🚪 Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="container">
         <h1>Editar Estudiante</h1>
-        <form action="/editar-estudiante/{{.ID}}" method="POST">
+        <form id="estudianteForm" action="/editar-estudiante/{{.ID}}" method="POST">
             <label for="nombre">Nombre:</label>
             <input type="text" id="nombre" name="nombre" value="{{.Nombre}}" required>
 
@@ -70,8 +163,131 @@
             <label for="registro">Registro:</label>
             <input type="text" id="registro" name="registro" value="{{.Registro}}" required>
 
+            <div class="foto-section">
+                <h3>Foto de Referencia</h3>
+                {{if .FotoReferencia}}
+                <p>Foto actual guardada. Puedes capturar una nueva si deseas cambiarla.</p>
+                {{else}}
+                <p>No hay foto de referencia. Captura una nueva foto.</p>
+                {{end}}
+                
+                <button type="button" id="startCamera" class="camera-btn">Iniciar Cámara</button>
+                <button type="button" id="capturePhoto" class="camera-btn" disabled>Capturar Foto</button>
+                <button type="button" id="retakePhoto" class="camera-btn" style="display: none;">Tomar Otra Foto</button>
+                
+                <br><br>
+                <video id="video" autoplay></video>
+                <canvas id="canvas"></canvas>
+                <img id="capturedPhoto" class="captured-photo" alt="Foto capturada">
+                
+                <input type="hidden" id="fotoReferencia" name="foto_referencia" value="{{.FotoReferencia}}">
+            </div>
+
             <button type="submit">Guardar Cambios</button>
         </form>
     </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const capturedPhoto = document.getElementById('capturedPhoto');
+        const startCameraBtn = document.getElementById('startCamera');
+        const capturePhotoBtn = document.getElementById('capturePhoto');
+        const retakePhotoBtn = document.getElementById('retakePhoto');
+        const fotoReferenciaInput = document.getElementById('fotoReferencia');
+
+        let stream;
+        let photoDataURL;
+
+        // Configurar canvas
+        canvas.width = 300;
+        canvas.height = 225;
+
+        // Iniciar cámara
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 300 },
+                        height: { ideal: 225 },
+                        facingMode: 'user'
+                    } 
+                });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                startCameraBtn.style.display = 'none';
+                capturePhotoBtn.disabled = false;
+            } catch (err) {
+                alert('Error al acceder a la cámara: ' + err.message);
+            }
+        });
+
+        // Capturar foto
+        capturePhotoBtn.addEventListener('click', () => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            photoDataURL = canvas.toDataURL('image/jpeg', 0.8);
+            
+            capturedPhoto.src = photoDataURL;
+            capturedPhoto.style.display = 'block';
+            video.style.display = 'none';
+            
+            capturePhotoBtn.style.display = 'none';
+            retakePhotoBtn.style.display = 'inline-block';
+            
+            // Guardar en el input oculto
+            fotoReferenciaInput.value = photoDataURL;
+        });
+
+        // Tomar otra foto
+        retakePhotoBtn.addEventListener('click', () => {
+            video.style.display = 'block';
+            capturedPhoto.style.display = 'none';
+            
+            capturePhotoBtn.style.display = 'inline-block';
+            retakePhotoBtn.style.display = 'none';
+            
+            // No limpiar el valor si ya había una foto previa
+        });
+
+        // Limpiar recursos al salir
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        // Envío del formulario
+        document.getElementById('estudianteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const studentId = '{{.ID}}';
+
+            try {
+                const response = await fetch(`/editar-estudiante/${studentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        nombre: document.getElementById('nombre').value,
+                        apellidos: document.getElementById('apellidos').value,
+                        registro: document.getElementById('registro').value,
+                        foto_referencia: fotoReferenciaInput.value || ''
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Estudiante actualizado exitosamente');
+                    window.location.href = '/gestionar-estudiantes';
+                } else {
+                    const error = await response.text();
+                    alert('Error: ' + error);
+                }
+            } catch (err) {
+                alert('Error de conexión: ' + err.message);
+            }
+        });
+    </script>
 </body>
 </html>

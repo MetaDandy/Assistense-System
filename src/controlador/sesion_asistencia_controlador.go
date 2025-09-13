@@ -12,12 +12,19 @@ import (
 )
 
 type SesionAsistenciaControlador struct {
-	modelo modelo.SesionAsistenciaInterfaz
-	vista  *vista.SesionAsistenciaVistaHTML
+	modelo           modelo.SesionAsistenciaInterfaz
+	asistenciaModelo modelo.AsistenciaInterfaz
+	estudianteModelo modelo.EstudianteInterfaz
+	vista            *vista.SesionAsistenciaVistaHTML
 }
 
-func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, v *vista.SesionAsistenciaVistaHTML) *SesionAsistenciaControlador {
-	return &SesionAsistenciaControlador{modelo: m, vista: v}
+func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, am modelo.AsistenciaInterfaz, em modelo.EstudianteInterfaz, v *vista.SesionAsistenciaVistaHTML) *SesionAsistenciaControlador {
+	return &SesionAsistenciaControlador{
+		modelo:           m,
+		asistenciaModelo: am,
+		estudianteModelo: em,
+		vista:            v,
+	}
 }
 
 // esSesionActiva verifica si una sesión está activa considerando fecha y hora
@@ -149,11 +156,13 @@ func (c *SesionAsistenciaControlador) MostrarDetalle(w http.ResponseWriter, r *h
 	}
 
 	activa := esSesionActiva(sesion.Fecha, sesion.HoraInicio, sesion.HoraFin)
-	if !activa {
-		http.Error(w, "Sesión no activa", http.StatusForbidden)
-		return
+
+	data := map[string]interface{}{
+		"Sesion": sesion,
+		"Activa": activa,
 	}
-	c.vista.RenderizarDetalle(w, map[string]interface{}{"Sesion": sesion})
+
+	c.vista.RenderizarDetalle(w, data)
 }
 
 // GET /gestionar-sesiones - Mostrar formulario y lista en una sola vista
@@ -321,4 +330,219 @@ func (c *SesionAsistenciaControlador) renderGestionarConExito(w http.ResponseWri
 		"Sesiones": sesionesView,
 		"Exito":    true,
 	})
+}
+
+// GET /sesion-asistencia/{id}/registrar - Mostrar SELECTOR de estudiantes
+func (c *SesionAsistenciaControlador) MostrarRegistrarAsistencias(w http.ResponseWriter, r *http.Request) {
+	idStr := mux.Vars(r)["id"]
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Obtener sesión
+	sesion, err := c.modelo.ObtenerSesionAsistencia(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Verificar que la sesión esté activa
+	activa := esSesionActiva(sesion.Fecha, sesion.HoraInicio, sesion.HoraFin)
+	if !activa {
+		http.Error(w, "Solo se pueden registrar asistencias en sesiones activas", http.StatusForbidden)
+		return
+	}
+
+	// Obtener lista de estudiantes REALES de la base de datos
+	estudiantesDB, err := c.estudianteModelo.MostrarEstudiantes()
+	if err != nil {
+		http.Error(w, "Error al obtener estudiantes: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convertir a formato para la vista
+	estudiantes := []struct {
+		ID        string
+		Nombre    string
+		Apellidos string
+		Registro  string
+	}{}
+
+	for _, est := range estudiantesDB {
+		estudiantes = append(estudiantes, struct {
+			ID        string
+			Nombre    string
+			Apellidos string
+			Registro  string
+		}{
+			ID:        est.ID.String(),
+			Nombre:    est.Nombre,
+			Apellidos: est.Apellidos,
+			Registro:  est.Registro,
+		})
+	}
+
+	data := map[string]interface{}{
+		"Sesion":      sesion,
+		"Estudiantes": estudiantes,
+	}
+
+	c.vista.RenderizarRegistrarAsistencias(w, data)
+}
+
+// POST /sesion-asistencia/{id}/registrar - Procesar selección de estudiante
+func (c *SesionAsistenciaControlador) ProcesarSeleccionEstudiante(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error en el formulario", http.StatusBadRequest)
+		return
+	}
+
+	// Obtener parámetros
+	sesionIDStr := mux.Vars(r)["id"]
+	estudianteIDStr := r.FormValue("estudiante_id")
+
+	if estudianteIDStr == "" {
+		http.Error(w, "Debe seleccionar un estudiante", http.StatusBadRequest)
+		return
+	}
+
+	// Redirigir a la captura de foto para reconocimiento facial
+	http.Redirect(w, r, "/capturar-foto?sesion="+sesionIDStr+"&estudiante="+estudianteIDStr, http.StatusSeeOther)
+}
+
+// GET /sesion-asistencia/{id}/estudiante/{estudiante_id}/foto - Mostrar formulario de captura de foto
+func (c *SesionAsistenciaControlador) MostrarFormularioFoto(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sesionIDStr := vars["id"]
+	estudianteIDStr := vars["estudiante_id"]
+
+	sesionID, err := uuid.Parse(sesionIDStr)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	estudianteID, err := uuid.Parse(estudianteIDStr)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Obtener sesión
+	sesion, err := c.modelo.ObtenerSesionAsistencia(sesionID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Obtener estudiante
+	estudiante, err := c.estudianteModelo.ObtenerEstudiantePorID(estudianteID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Verificar que la sesión esté activa
+	activa := esSesionActiva(sesion.Fecha, sesion.HoraInicio, sesion.HoraFin)
+
+	// Verificar que el estudiante tenga foto de referencia
+	tieneFotoReferencia := estudiante.FotoReferencia != ""
+
+	data := map[string]interface{}{
+		"Sesion":              sesion,
+		"Estudiante":          estudiante,
+		"Activa":              activa,
+		"TieneFotoReferencia": tieneFotoReferencia,
+	}
+
+	c.vista.RenderizarFormularioFoto(w, data)
+}
+
+// GET /sesion-asistencia/{id}/listar - Mostrar lista de asistencias
+func (c *SesionAsistenciaControlador) MostrarListarAsistencias(w http.ResponseWriter, r *http.Request) {
+	idStr := mux.Vars(r)["id"]
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Obtener sesión
+	sesion, err := c.modelo.ObtenerSesionAsistencia(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Verificar que el docente tenga acceso a esta sesión
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	claims, err := helper.ValidateJwt(cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	docenteIDStr, ok := claims["id"].(string)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	docenteID, err := uuid.Parse(docenteIDStr)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Verificar que la sesión pertenece al docente
+	if sesion.DocenteID != docenteID {
+		http.Error(w, "No tiene acceso a esta sesión", http.StatusForbidden)
+		return
+	}
+
+	// Obtener asistencias reales de la base de datos
+	asistenciasReales, err := c.asistenciaModelo.ObtenerAsistenciasPorSesion(id)
+	if err != nil {
+		http.Error(w, "Error al obtener asistencias: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convertir a formato para la vista
+	asistencias := []struct {
+		ID               string
+		EstudianteNombre string
+		FechaHora        string
+		Similitud        float64
+	}{}
+
+	for _, a := range asistenciasReales {
+		estudianteNombre := "Estudiante Desconocido"
+		if a.Estudiante.Nombre != "" {
+			estudianteNombre = a.Estudiante.Nombre + " " + a.Estudiante.Apellidos
+		}
+
+		asistencias = append(asistencias, struct {
+			ID               string
+			EstudianteNombre string
+			FechaHora        string
+			Similitud        float64
+		}{
+			ID:               a.ID.String(),
+			EstudianteNombre: estudianteNombre,
+			FechaHora:        a.FechaHora,
+			Similitud:        a.Similitud * 100, // Convertir a porcentaje
+		})
+	}
+
+	data := map[string]interface{}{
+		"Sesion":           sesion,
+		"Asistencias":      asistencias,
+		"TotalAsistencias": len(asistencias),
+	}
+
+	c.vista.RenderizarListarAsistencias(w, data)
 }

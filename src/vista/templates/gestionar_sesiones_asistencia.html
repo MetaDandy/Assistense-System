@@ -7,14 +7,54 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
         }
+        .navbar {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .nav-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
         .container {
+            max-width: 1000px;
+            margin: 20px auto;
             background-color: rgba(255, 255, 255, 0.95);
             padding: 40px;
             border-radius: 15px;
@@ -112,11 +152,48 @@
         .btn-back:hover {
             background-color: #5a6268;
         }
+        .btn-register {
+            padding: 5px 10px;
+            background-color: #FF9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin: 2px;
+        }
+        .btn-register:hover {
+            background-color: #F57C00;
+        }
+        .btn-list {
+            padding: 5px 10px;
+            background-color: #9C27B0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            margin: 2px;
+        }
+        .btn-list:hover {
+            background-color: #7B1FA2;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/panel-docente" class="nav-brand">📚 Sistema de Asistencias</a>
+            <ul class="nav-links">
+                <li><a href="/panel-docente">🏠 Inicio</a></li>
+                <li><a href="/gestionar-estudiantes">👥 Estudiantes</a></li>
+                <li><a href="/gestionar-sesiones" class="active">📅 Sesiones</a></li>
+                <li><a href="/login">🚪 Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="container">
-        <a href="/panel-docente" class="btn-back">← Volver al Panel</a>
         
         <h1>Gestionar Sesiones de Asistencia</h1>
 
@@ -168,6 +245,12 @@
                     </td>
                     <td>
                         <a href="/sesion-asistencia/{{.ID}}" class="btn-detail">Ver Detalle</a>
+                        {{if .Activa}}
+                            <a href="/sesion-asistencia/{{.ID}}/registrar" class="btn-register">📝 Registrar Asistencias</a>
+                            <a href="/sesion-asistencia/{{.ID}}/listar" class="btn-list">👥 Listar Asistencias</a>
+                        {{else}}
+                            <a href="/sesion-asistencia/{{.ID}}/listar" class="btn-list">👥 Ver Asistencias</a>
+                        {{end}}
                     </td>
                 </tr>
                 {{end}}

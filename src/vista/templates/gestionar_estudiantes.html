@@ -7,14 +7,54 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
         }
+        .navbar {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .nav-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
         .container {
+            max-width: 1000px;
+            margin: 20px auto;
             background-color: rgba(255, 255, 255, 0.95);
             padding: 40px;
             border-radius: 15px;
@@ -40,6 +80,7 @@
             margin-bottom: 20px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            box-sizing: border-box;
         }
         button {
             padding: 10px 20px;
@@ -77,14 +118,66 @@
         .btn-edit:hover {
             background-color: #45a049;
         }
+        .foto-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        #video {
+            width: 100%;
+            max-width: 300px;
+            height: 225px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: #f5f5f5;
+        }
+        #canvas {
+            display: none;
+        }
+        .captured-photo {
+            width: 100%;
+            max-width: 300px;
+            height: 225px;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .btn-camera {
+            background: #4CAF50;
+            margin: 5px;
+        }
+        .btn-camera:hover {
+            background: #45a049;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/panel-docente" class="nav-brand">📚 Sistema de Asistencias</a>
+            <ul class="nav-links">
+                <li><a href="/panel-docente">🏠 Inicio</a></li>
+                <li><a href="/gestionar-estudiantes" class="active">👥 Estudiantes</a></li>
+                <li><a href="/gestionar-sesiones">📅 Sesiones</a></li>
+                <li><a href="/login">🚪 Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="container">
         <h1>Gestionar Estudiantes</h1>
 
         <!-- Formulario para registrar estudiantes -->
-        <form action="/registrar-estudiante" method="POST">
+        <form id="estudianteForm" action="/registrar-estudiante" method="POST">
             <label for="nombre">Nombre:</label>
             <input type="text" id="nombre" name="nombre" required>
 
@@ -93,6 +186,23 @@
 
             <label for="registro">Registro:</label>
             <input type="text" id="registro" name="registro" required>
+
+            <div class="foto-section">
+                <h3>📷 Foto de Referencia (Opcional)</h3>
+                <p>Capture una foto clara del rostro del estudiante para reconocimiento facial</p>
+                
+                <video id="video" autoplay playsinline style="display: none;"></video>
+                <canvas id="canvas"></canvas>
+                <img id="capturedPhoto" class="captured-photo" style="display: none;">
+                
+                <div style="margin: 15px 0;">
+                    <button type="button" id="startCamera" class="btn-camera">📷 Iniciar Cámara</button>
+                    <button type="button" id="capturePhoto" class="btn-camera" disabled>📸 Capturar Foto</button>
+                    <button type="button" id="retakePhoto" class="btn-secondary" style="display: none;">🔄 Tomar Otra</button>
+                </div>
+                
+                <input type="hidden" id="fotoReferencia" name="foto_referencia">
+            </div>
 
             <button type="submit">Registrar Estudiante</button>
         </form>
@@ -121,5 +231,114 @@
             </tbody>
         </table>
     </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const capturedPhoto = document.getElementById('capturedPhoto');
+        const startCameraBtn = document.getElementById('startCamera');
+        const capturePhotoBtn = document.getElementById('capturePhoto');
+        const retakePhotoBtn = document.getElementById('retakePhoto');
+        const fotoReferenciaInput = document.getElementById('fotoReferencia');
+
+        let stream;
+        let photoDataURL;
+
+        // Configurar canvas
+        canvas.width = 300;
+        canvas.height = 225;
+
+        // Iniciar cámara
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 300 },
+                        height: { ideal: 225 },
+                        facingMode: 'user'
+                    } 
+                });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                startCameraBtn.style.display = 'none';
+                capturePhotoBtn.disabled = false;
+            } catch (err) {
+                alert('Error al acceder a la cámara: ' + err.message);
+            }
+        });
+
+        // Capturar foto
+        capturePhotoBtn.addEventListener('click', () => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            photoDataURL = canvas.toDataURL('image/jpeg', 0.8);
+            
+            capturedPhoto.src = photoDataURL;
+            capturedPhoto.style.display = 'block';
+            video.style.display = 'none';
+            
+            capturePhotoBtn.style.display = 'none';
+            retakePhotoBtn.style.display = 'inline-block';
+            
+            // Guardar en el input oculto
+            fotoReferenciaInput.value = photoDataURL;
+        });
+
+        // Tomar otra foto
+        retakePhotoBtn.addEventListener('click', () => {
+            video.style.display = 'block';
+            capturedPhoto.style.display = 'none';
+            
+            capturePhotoBtn.style.display = 'inline-block';
+            retakePhotoBtn.style.display = 'none';
+            
+            fotoReferenciaInput.value = '';
+        });
+
+        // Limpiar recursos al salir
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        // Envío del formulario
+        document.getElementById('estudianteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('nombre', document.getElementById('nombre').value);
+            formData.append('apellidos', document.getElementById('apellidos').value);
+            formData.append('registro', document.getElementById('registro').value);
+            if (fotoReferenciaInput.value) {
+                formData.append('foto_referencia', fotoReferenciaInput.value);
+            }
+
+            try {
+                const response = await fetch('/registrar-estudiante', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        nombre: document.getElementById('nombre').value,
+                        apellidos: document.getElementById('apellidos').value,
+                        registro: document.getElementById('registro').value,
+                        foto_referencia: fotoReferenciaInput.value || ''
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Estudiante registrado exitosamente');
+                    location.reload();
+                } else {
+                    const error = await response.text();
+                    alert('Error: ' + error);
+                }
+            } catch (err) {
+                alert('Error de conexión: ' + err.message);
+            }
+        });
+    </script>
 </body>
 </html>
