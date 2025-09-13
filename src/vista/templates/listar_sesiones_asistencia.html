@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sesiones de Asistencia</title>
+</head>
+<body>
+    <h1>Sesiones de Asistencia</h1>
+    <a href="/sesion-asistencia/registrar">Registrar nueva sesión</a>
+    <table border="1">
+        <tr>
+            <th>Fecha</th>
+            <th>Hora Inicio</th>
+            <th>Hora Fin</th>
+            <th>Estado</th>
+            <th>Acción</th>
+        </tr>
+        {{range .Sesiones}}
+        <tr>
+            <td>{{.Fecha}}</td>
+            <td>{{.HoraInicio}}</td>
+            <td>{{.HoraFin}}</td>
+            <td>{{if .Activa}}Activa{{else}}Finalizada{{end}}</td>
+            <td>
+                {{if .Activa}}
+                <a href="/sesion-asistencia/{{.ID}}">Entrar</a>
+                {{else}}-
+                {{end}}
+            </td>
+        </tr>
+        {{end}}
+    </table>
+</body>
+</html>

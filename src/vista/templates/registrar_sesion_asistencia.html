@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Sesión de Asistencia</title>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setear fecha y hora local por defecto
+        const now = new Date();
+        // Fecha en formato yyyy-mm-dd
+        document.querySelector('input[name="fecha"]').value = now.toLocaleDateString('en-CA'); // en-CA da formato YYYY-MM-DD
+        // Hora en formato hh:mm
+        const pad = n => n.toString().padStart(2, '0');
+        const hora = pad(now.getHours()) + ':' + pad(now.getMinutes());
+        document.querySelector('input[name="hora_inicio"]').value = hora;
+        // Hora de fin: por defecto +1 hora
+        const fin = new Date(now.getTime() + 60*60*1000);
+        const horaFin = pad(fin.getHours()) + ':' + pad(fin.getMinutes());
+        document.querySelector('input[name="hora_fin"]').value = horaFin;
+    });
+    </script>
+</head>
+<body>
+    <h1>Registrar Sesión de Asistencia</h1>
+    <form method="POST" action="/sesion-asistencia/registrar">
+        <label>Fecha:</label>
+        <input type="date" name="fecha" required><br>
+        <label>Hora de inicio:</label>
+        <input type="time" name="hora_inicio" required><br>
+        <label>Hora de fin:</label>
+        <input type="time" name="hora_fin" required><br>
+        <button type="submit">Registrar</button>
+    </form>
+    {{if .Error}}
+    <p style="color:red">{{.Error}}</p>
+    {{end}}
+    {{if .Exito}}
+    <p style="color:green">¡Sesión registrada!</p>
+    {{end}}
+</body>
+</html>

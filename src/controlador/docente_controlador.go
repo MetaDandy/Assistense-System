@@ -24,7 +24,7 @@ type DocenteControladorInterfaz interface {
 func NuevoDocenteControlador(modelos modelo.DocenteInterfaz) DocenteControladorInterfaz {
 	return &DocenteControlador{
 		modelos:   modelos,
-		vistaHTML: vista.NewDocenteVistaHTML(),
+		vistaHTML: vista.NuevoDocenteVistaHTML(),
 	}
 }
 
@@ -67,7 +67,7 @@ func (dc *DocenteControlador) ProcesarRegistro(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	docente, token, err := dc.modelos.RegistrarDocente(&registro)
+	_, token, err := dc.modelos.RegistrarDocente(&registro)
 	if err != nil {
 		data := map[string]interface{}{
 			"Error": err.Error(),
@@ -76,13 +76,14 @@ func (dc *DocenteControlador) ProcesarRegistro(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Enviar el ID del docente y el token al cliente
-	data := map[string]interface{}{
-		"Exito":   true,
-		"Docente": docente,
-		"Token":   token,
-	}
-	dc.vistaHTML.RenderizarRegistro(w, data)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	http.Redirect(w, r, "/panel-docente", http.StatusSeeOther)
 }
 
 // MostrarLogin muestra el formulario de login HTML
@@ -97,20 +98,17 @@ func (dc *DocenteControlador) ProcesarLogin(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Parsear formulario HTML
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error procesando formulario", http.StatusBadRequest)
 		return
 	}
 
-	// Crear DTO desde formulario
 	login := modelo.IniciarSesionDto{
 		Correo:     r.FormValue("correo"),
 		Contraseña: r.FormValue("contraseña"),
 	}
 
-	// Procesar login usando el modelo
-	_, _, err := dc.modelos.IniciarSesion(login)
+	_, token, err := dc.modelos.IniciarSesion(login)
 	if err != nil {
 		data := map[string]interface{}{
 			"Error":  err.Error(),
@@ -120,7 +118,13 @@ func (dc *DocenteControlador) ProcesarLogin(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Redirigir al panel del docente
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
 	http.Redirect(w, r, "/panel-docente", http.StatusSeeOther)
 }
 

@@ -2,7 +2,6 @@ package modelo
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/MetaDandy/Assistense-System/helper"
 	"github.com/google/uuid"
@@ -17,8 +16,7 @@ type Docente struct {
 	Apellidos  string    `gorm:"type:varchar(100);not null"`
 	Contraseña string    `gorm:"not null"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Sesiones []SesionAsistencia `gorm:"foreignKey:DocenteID"`
 }
 
 type RegistrarDocenteDto struct {
@@ -47,7 +45,7 @@ type DocenteInterfaz interface {
 	RegistrarDocente(docente *RegistrarDocenteDto) (*Docente, string, error)
 	IniciarSesion(inicio IniciarSesionDto) (*Docente, string, error)
 	ObtenerDocentePorID(id uuid.UUID) (*Docente, error)
-	ActualizarDocente(id uuid.UUID, docente *ActualizarDocente) (*Docente, error)
+	ActualizarDocente(docente *ActualizarDocente) (*Docente, error)
 }
 
 func NuevoDocenteModelo(db *gorm.DB) DocenteInterfaz {
@@ -115,8 +113,8 @@ func (dm *DocenteModelo) ObtenerDocentePorID(id uuid.UUID) (*Docente, error) {
 	return &docente, nil
 }
 
-func (dm *DocenteModelo) ActualizarDocente(id uuid.UUID, docente *ActualizarDocente) (*Docente, error) {
-	docenteExistente, err := dm.ObtenerDocentePorID(id)
+func (dm *DocenteModelo) ActualizarDocente(docente *ActualizarDocente) (*Docente, error) {
+	docenteExistente, err := dm.ObtenerDocentePorID(uuid.Nil)
 	if err != nil {
 		return nil, err
 	}

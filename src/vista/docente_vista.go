@@ -13,7 +13,7 @@ type DocenteVistaHTML struct {
 	tmpl *template.Template
 }
 
-func NewDocenteVistaHTML() *DocenteVistaHTML {
+func NuevoDocenteVistaHTML() *DocenteVistaHTML {
 	t := template.Must(template.ParseFS(TemplatesFS, "templates/*.html"))
 	return &DocenteVistaHTML{tmpl: t}
 }
