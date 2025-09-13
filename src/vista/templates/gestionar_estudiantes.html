@@ -211,6 +211,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Foto</th>
                     <th>Nombre</th>
                     <th>Apellidos</th>
                     <th>Registro</th>
@@ -220,6 +221,26 @@
             <tbody>
                 {{range .Estudiantes}}
                 <tr>
+                    <td>
+                        {{if .FotoReferencia}}
+                            <img id="foto-{{.ID}}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; cursor:pointer;" alt="Foto estudiante" onclick="showPhotoModal('{{.FotoReferencia}}', 'Foto de {{.Nombre}} {{.Apellidos}}')">
+                            <script>
+                                (function() {
+                                    var img = document.getElementById('foto-{{.ID}}');
+                                    var base64Data = '{{.FotoReferencia}}';
+                                    
+                                    // Si no tiene el prefijo, agregarlo
+                                    if (!base64Data.startsWith('data:')) {
+                                        base64Data = 'data:image/jpeg;base64,' + base64Data;
+                                    }
+                                    
+                                    img.src = base64Data;
+                                })();
+                            </script>
+                        {{else}}
+                            Sin foto
+                        {{end}}
+                    </td>
                     <td>{{.Nombre}}</td>
                     <td>{{.Apellidos}}</td>
                     <td>{{.Registro}}</td>
@@ -339,6 +360,56 @@
                 alert('Error de conexión: ' + err.message);
             }
         });
+
+        // Procesar todas las fotos para asegurar que tengan el prefijo correcto
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('img[src]');
+            images.forEach(function(img) {
+                let src = img.src;
+                // Si la imagen no tiene el prefijo data: y parece ser base64
+                if (!src.startsWith('data:') && src.length > 100) {
+                    // Agregar el prefijo data:image/jpeg;base64,
+                    img.src = 'data:image/jpeg;base64,' + src;
+                }
+            });
+        });
+
+        // Funciones para el modal de fotos
+        function showPhotoModal(photoSrc, title) {
+            var modal = document.getElementById('photoModal');
+            var modalImg = document.getElementById('photoModalImage');
+            var modalTitle = document.getElementById('photoModalTitle');
+            
+            // Procesar la foto igual que en las miniaturas
+            if (!photoSrc.startsWith('data:')) {
+                photoSrc = 'data:image/jpeg;base64,' + photoSrc;
+            }
+            
+            modalImg.src = photoSrc;
+            modalTitle.textContent = title;
+            modal.style.display = 'block';
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoModal').style.display = 'none';
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            var modal = document.getElementById('photoModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
     </script>
+
+    <!-- Modal para mostrar fotos -->
+    <div id="photoModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.8);">
+        <div style="position:relative; margin:auto; top:50%; width:80%; max-width:600px; transform:translateY(-50%);">
+            <span style="position:absolute; top:15px; right:35px; color:#f1f1f1; font-size:40px; font-weight:bold; cursor:pointer;" onclick="closePhotoModal()">&times;</span>
+            <h3 id="photoModalTitle" style="color:white; text-align:center; margin-bottom:20px;"></h3>
+            <img id="photoModalImage" style="width:100%; height:auto; border-radius:10px;" src="" alt="Foto">
+        </div>
+    </div>
 </body>
 </html>

@@ -517,6 +517,7 @@ func (c *SesionAsistenciaControlador) MostrarListarAsistencias(w http.ResponseWr
 		EstudianteNombre string
 		FechaHora        string
 		Similitud        float64
+		FotoVerificacion string
 	}{}
 
 	for _, a := range asistenciasReales {
@@ -530,11 +531,13 @@ func (c *SesionAsistenciaControlador) MostrarListarAsistencias(w http.ResponseWr
 			EstudianteNombre string
 			FechaHora        string
 			Similitud        float64
+			FotoVerificacion string
 		}{
 			ID:               a.ID.String(),
 			EstudianteNombre: estudianteNombre,
 			FechaHora:        a.FechaHora,
 			Similitud:        a.Similitud * 100, // Convertir a porcentaje
+			FotoVerificacion: a.FotoVerificacion,
 		})
 	}
 
