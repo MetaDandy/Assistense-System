@@ -14,6 +14,9 @@ func SetupRoutes() *mux.Router {
 	docenteModelo := modelo.NuevoDocenteModelo(config.DB)
 	docenteControlador := controlador.NuevoDocenteControlador(docenteModelo)
 
+	estudianteModelo := modelo.NuevoEstudianteModelo(config.DB)
+	estudianteControlador := controlador.NuevoEstudianteControlador(estudianteModelo)
+
 	sesionModelo := modelo.NuevaSesionAsistenciaModelo(config.DB)
 	sesionVista := vista.NuevaSesionAsistenciaVistaHTML()
 	sesionControlador := controlador.NuevoSesionAsistenciaControlador(sesionModelo, sesionVista)
@@ -35,6 +38,17 @@ func SetupRoutes() *mux.Router {
 	r.HandleFunc("/sesion-asistencia/registrar", sesionControlador.ProcesarRegistrar).Methods("POST")
 	r.HandleFunc("/sesion-asistencia/listar", sesionControlador.ListarSesiones).Methods("GET")
 	r.HandleFunc("/sesion-asistencia/{id}", sesionControlador.MostrarDetalle).Methods("GET")
+
+	// Nueva ruta para gestionar sesiones (formulario + lista en una vista)
+	r.HandleFunc("/gestionar-sesiones", sesionControlador.MostrarGestionarSesiones).Methods("GET")
+	r.HandleFunc("/gestionar-sesiones", sesionControlador.ProcesarGestionarSesiones).Methods("POST")
+
+	// Rutas para gestionar estudiantes
+	r.HandleFunc("/gestionar-alumnos", estudianteControlador.MostrarGestionarEstudiantes).Methods("GET")
+	r.HandleFunc("/gestionar-estudiantes", estudianteControlador.MostrarGestionarEstudiantes).Methods("GET")
+	r.HandleFunc("/registrar-estudiante", estudianteControlador.ProcesarRegistrarEstudiante).Methods("POST")
+	r.HandleFunc("/editar-estudiante/{id}", estudianteControlador.MostrarEditarEstudiante).Methods("GET")
+	r.HandleFunc("/editar-estudiante/{id}", estudianteControlador.ProcesarEditarEstudiante).Methods("POST")
 
 	return r
 }

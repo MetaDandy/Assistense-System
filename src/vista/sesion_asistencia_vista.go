@@ -25,3 +25,7 @@ func (v *SesionAsistenciaVistaHTML) RenderizarListar(w http.ResponseWriter, data
 func (v *SesionAsistenciaVistaHTML) RenderizarDetalle(w http.ResponseWriter, data interface{}) {
 	v.tmpl.ExecuteTemplate(w, "detalle_sesion_asistencia.html", data)
 }
+
+func (v *SesionAsistenciaVistaHTML) RenderizarGestionarSesiones(w http.ResponseWriter, data interface{}) {
+	v.tmpl.ExecuteTemplate(w, "gestionar_sesiones_asistencia.html", data)
+}
