@@ -9,16 +9,30 @@ import (
 	"github.com/MetaDandy/Assistense-System/src/modelo"
 	"github.com/MetaDandy/Assistense-System/src/vista"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
-type AsistenciaControlador struct {
-	modelo           modelo.AsistenciaInterfaz
-	estudianteModelo modelo.EstudianteModeloInterfaz
-	vista            *vista.AsistenciaVistaHTML
+type AsistenciaControladorInterfaz interface {
+	MostrarConfirmarAsistencia(w http.ResponseWriter, r *http.Request)
+	MostrarCapturarFoto(w http.ResponseWriter, r *http.Request)
+	ProcesarRegistrarAsistencia(w http.ResponseWriter, r *http.Request)
+	MostrarListarAsistencias(w http.ResponseWriter, r *http.Request)
 }
 
-func NuevoAsistenciaControlador(m modelo.AsistenciaInterfaz, em modelo.EstudianteModeloInterfaz, v *vista.AsistenciaVistaHTML) *AsistenciaControlador {
-	return &AsistenciaControlador{modelo: m, estudianteModelo: em, vista: v}
+type AsistenciaControlador struct {
+	modelo                 modelo.AsistenciaInterfaz
+	estudianteModelo       modelo.EstudianteModeloInterfaz
+	sesionAsistenciaModelo modelo.SesionAsistenciaInterfaz
+	vista                  *vista.AsistenciaVistaHTML
+}
+
+func NuevoAsistenciaControlador(m modelo.AsistenciaInterfaz, em modelo.EstudianteModeloInterfaz, sam modelo.SesionAsistenciaInterfaz, v *vista.AsistenciaVistaHTML) AsistenciaControladorInterfaz {
+	return &AsistenciaControlador{
+		modelo:                 m,
+		estudianteModelo:       em,
+		sesionAsistenciaModelo: sam,
+		vista:                  v,
+	}
 }
 
 // GET /asistencia/confirmar?sesion=uuid&estudiante=uuid
@@ -212,4 +226,93 @@ func (c *AsistenciaControlador) ProcesarRegistrarAsistencia(w http.ResponseWrite
 		"id":        asistencia.ID.String(),
 		"similitud": similitud,
 	})
+}
+
+func (c *AsistenciaControlador) MostrarListarAsistencias(w http.ResponseWriter, r *http.Request) {
+	idStr := mux.Vars(r)["id"]
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Obtener sesión
+	sesion, err := c.sesionAsistenciaModelo.ObtenerSesionAsistencia(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Verificar que el docente tenga acceso a esta sesión
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	claims, err := helper.ValidateJwt(cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	docenteIDStr, ok := claims["id"].(string)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	docenteID, err := uuid.Parse(docenteIDStr)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Verificar que la sesión pertenece al docente
+	if sesion.DocenteID != docenteID {
+		http.Error(w, "No tiene acceso a esta sesión", http.StatusForbidden)
+		return
+	}
+
+	// Obtener asistencias reales de la base de datos
+	asistenciasReales, err := c.modelo.ObtenerAsistenciasPorSesion(id)
+	if err != nil {
+		http.Error(w, "Error al obtener asistencias: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convertir a formato para la vista
+	asistencias := []struct {
+		ID               string
+		EstudianteNombre string
+		FechaHora        string
+		Similitud        float64
+		FotoVerificacion string
+	}{}
+
+	for _, a := range asistenciasReales {
+		estudianteNombre := "Estudiante Desconocido"
+		if a.Estudiante.Nombre != "" {
+			estudianteNombre = a.Estudiante.Nombre + " " + a.Estudiante.Apellidos
+		}
+
+		asistencias = append(asistencias, struct {
+			ID               string
+			EstudianteNombre string
+			FechaHora        string
+			Similitud        float64
+			FotoVerificacion string
+		}{
+			ID:               a.ID.String(),
+			EstudianteNombre: estudianteNombre,
+			FechaHora:        a.FechaHora,
+			Similitud:        a.Similitud * 100, // Convertir a porcentaje
+			FotoVerificacion: a.FotoVerificacion,
+		})
+	}
+
+	data := map[string]interface{}{
+		"Sesion":           sesion,
+		"Asistencias":      asistencias,
+		"TotalAsistencias": len(asistencias),
+	}
+
+	c.vista.RenderizarListarAsistencias(w, data)
 }

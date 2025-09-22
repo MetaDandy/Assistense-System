@@ -11,17 +11,27 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type SesionAsistenciaControladorInterfaz interface {
+	MostrarRegistrar(w http.ResponseWriter, r *http.Request)
+	ProcesarRegistrar(w http.ResponseWriter, r *http.Request)
+	ListarSesiones(w http.ResponseWriter, r *http.Request)
+	MostrarDetalle(w http.ResponseWriter, r *http.Request)
+	MostrarGestionarSesiones(w http.ResponseWriter, r *http.Request)
+	ProcesarGestionarSesiones(w http.ResponseWriter, r *http.Request)
+	MostrarRegistrarAsistencias(w http.ResponseWriter, r *http.Request)
+	ProcesarSeleccionEstudiante(w http.ResponseWriter, r *http.Request)
+	MostrarFormularioFoto(w http.ResponseWriter, r *http.Request)
+}
+
 type SesionAsistenciaControlador struct {
 	modelo           modelo.SesionAsistenciaInterfaz
-	asistenciaModelo modelo.AsistenciaInterfaz
 	estudianteModelo modelo.EstudianteModeloInterfaz
 	vista            *vista.SesionAsistenciaVistaHTML
 }
 
-func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, am modelo.AsistenciaInterfaz, em modelo.EstudianteModeloInterfaz, v *vista.SesionAsistenciaVistaHTML) *SesionAsistenciaControlador {
+func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, em modelo.EstudianteModeloInterfaz, v *vista.SesionAsistenciaVistaHTML) SesionAsistenciaControladorInterfaz {
 	return &SesionAsistenciaControlador{
 		modelo:           m,
-		asistenciaModelo: am,
 		estudianteModelo: em,
 		vista:            v,
 	}
@@ -446,93 +456,4 @@ func (c *SesionAsistenciaControlador) MostrarFormularioFoto(w http.ResponseWrite
 	}
 
 	c.vista.RenderizarFormularioFoto(w, data)
-}
-
-func (c *SesionAsistenciaControlador) MostrarListarAsistencias(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["id"]
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	// Obtener sesión
-	sesion, err := c.modelo.ObtenerSesionAsistencia(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	// Verificar que el docente tenga acceso a esta sesión
-	cookie, err := r.Cookie("token")
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-	claims, err := helper.ValidateJwt(cookie.Value)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-	docenteIDStr, ok := claims["id"].(string)
-	if !ok {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-	docenteID, err := uuid.Parse(docenteIDStr)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	// Verificar que la sesión pertenece al docente
-	if sesion.DocenteID != docenteID {
-		http.Error(w, "No tiene acceso a esta sesión", http.StatusForbidden)
-		return
-	}
-
-	// Obtener asistencias reales de la base de datos
-	asistenciasReales, err := c.asistenciaModelo.ObtenerAsistenciasPorSesion(id)
-	if err != nil {
-		http.Error(w, "Error al obtener asistencias: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Convertir a formato para la vista
-	asistencias := []struct {
-		ID               string
-		EstudianteNombre string
-		FechaHora        string
-		Similitud        float64
-		FotoVerificacion string
-	}{}
-
-	for _, a := range asistenciasReales {
-		estudianteNombre := "Estudiante Desconocido"
-		if a.Estudiante.Nombre != "" {
-			estudianteNombre = a.Estudiante.Nombre + " " + a.Estudiante.Apellidos
-		}
-
-		asistencias = append(asistencias, struct {
-			ID               string
-			EstudianteNombre string
-			FechaHora        string
-			Similitud        float64
-			FotoVerificacion string
-		}{
-			ID:               a.ID.String(),
-			EstudianteNombre: estudianteNombre,
-			FechaHora:        a.FechaHora,
-			Similitud:        a.Similitud * 100, // Convertir a porcentaje
-			FotoVerificacion: a.FotoVerificacion,
-		})
-	}
-
-	data := map[string]interface{}{
-		"Sesion":           sesion,
-		"Asistencias":      asistencias,
-		"TotalAsistencias": len(asistencias),
-	}
-
-	c.vista.RenderizarListarAsistencias(w, data)
 }

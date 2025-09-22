@@ -34,10 +34,6 @@ func (v *SesionAsistenciaVistaHTML) RenderizarRegistrarAsistencias(w http.Respon
 	v.tmpl.ExecuteTemplate(w, "selector_estudiante.html", data)
 }
 
-func (v *SesionAsistenciaVistaHTML) RenderizarListarAsistencias(w http.ResponseWriter, data interface{}) {
-	v.tmpl.ExecuteTemplate(w, "listar_asistencias.html", data)
-}
-
 func (v *SesionAsistenciaVistaHTML) RenderizarFormularioFoto(w http.ResponseWriter, data interface{}) {
 	v.tmpl.ExecuteTemplate(w, "capturar_foto.html", data)
 }

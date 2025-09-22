@@ -25,3 +25,9 @@ func (v *AsistenciaVistaHTML) RenderizarCapturarFoto(w http.ResponseWriter, data
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+func (v *AsistenciaVistaHTML) RenderizarListarAsistencias(w http.ResponseWriter, data interface{}) {
+	if err := v.tmpl.ExecuteTemplate(w, "listar_asistencias.html", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
