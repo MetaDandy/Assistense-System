@@ -12,7 +12,7 @@ import (
 )
 
 type EstudianteControlador struct {
-	modelos   modelo.EstudianteInterfaz
+	modelos   modelo.EstudianteModeloInterfaz
 	vistaHTML *vista.EstudianteVistaHTML
 }
 
@@ -23,10 +23,10 @@ type EstudianteControladorInterfaz interface {
 	ProcesarEditarEstudiante(w http.ResponseWriter, r *http.Request)
 }
 
-func NuevoEstudianteControlador(modelos modelo.EstudianteInterfaz) EstudianteControladorInterfaz {
+func NuevoEstudianteControlador(modelos modelo.EstudianteModeloInterfaz, vistas *vista.EstudianteVistaHTML) EstudianteControladorInterfaz {
 	return &EstudianteControlador{
 		modelos:   modelos,
-		vistaHTML: vista.NewEstudianteVistaHTML(),
+		vistaHTML: vistas,
 	}
 }
 

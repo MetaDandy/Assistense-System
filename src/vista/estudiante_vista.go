@@ -9,7 +9,7 @@ type EstudianteVistaHTML struct {
 	tmpl *template.Template
 }
 
-func NewEstudianteVistaHTML() *EstudianteVistaHTML {
+func NuevaEstudianteVistaHTML() *EstudianteVistaHTML {
 	t := template.Must(template.ParseFS(TemplatesFS, "templates/*.html"))
 	return &EstudianteVistaHTML{tmpl: t}
 }

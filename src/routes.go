@@ -12,10 +12,12 @@ func SetupRoutes() *mux.Router {
 	r := mux.NewRouter()
 
 	docenteModelo := modelo.NuevoDocenteModelo(config.DB)
-	docenteControlador := controlador.NuevoDocenteControlador(docenteModelo)
+	docenteVista := vista.NuevoDocenteVistaHTML()
+	docenteControlador := controlador.NuevoDocenteControlador(docenteModelo, docenteVista)
 
 	estudianteModelo := modelo.NuevoEstudianteModelo(config.DB)
-	estudianteControlador := controlador.NuevoEstudianteControlador(estudianteModelo)
+	estudianteVista := vista.NuevaEstudianteVistaHTML()
+	estudianteControlador := controlador.NuevoEstudianteControlador(estudianteModelo, estudianteVista)
 
 	sesionModelo := modelo.NuevaSesionAsistenciaModelo(config.DB)
 	sesionVista := vista.NuevaSesionAsistenciaVistaHTML()

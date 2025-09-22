@@ -5,7 +5,6 @@ import (
 
 	"github.com/MetaDandy/Assistense-System/helper"
 	"github.com/google/uuid"
-	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
@@ -32,23 +31,17 @@ type IniciarSesionDto struct {
 	Contraseña string `json:"contraseña" binding:"required"`
 }
 
-type ActualizarDocente struct {
-	Nombre    *string `json:"nombre" binding:"required"`
-	Apellidos *string `json:"apellidos" binding:"required"`
-}
-
 type DocenteModelo struct {
 	db *gorm.DB
 }
 
-type DocenteInterfaz interface {
+type DocenteModeloInterfaz interface {
 	RegistrarDocente(docente *RegistrarDocenteDto) (*Docente, string, error)
 	IniciarSesion(inicio IniciarSesionDto) (*Docente, string, error)
 	ObtenerDocentePorID(id uuid.UUID) (*Docente, error)
-	ActualizarDocente(docente *ActualizarDocente) (*Docente, error)
 }
 
-func NuevoDocenteModelo(db *gorm.DB) DocenteInterfaz {
+func NuevoDocenteModelo(db *gorm.DB) DocenteModeloInterfaz {
 	return &DocenteModelo{db: db}
 }
 
@@ -111,26 +104,4 @@ func (dm *DocenteModelo) ObtenerDocentePorID(id uuid.UUID) (*Docente, error) {
 	}
 
 	return &docente, nil
-}
-
-func (dm *DocenteModelo) ActualizarDocente(docente *ActualizarDocente) (*Docente, error) {
-	docenteExistente, err := dm.ObtenerDocentePorID(uuid.Nil)
-	if err != nil {
-		return nil, err
-	}
-
-	opt := copier.Option{
-		IgnoreEmpty: true,
-		DeepCopy:    true,
-	}
-
-	if err := copier.CopyWithOption(docenteExistente, docente, opt); err != nil {
-		return nil, fmt.Errorf("failed to update fields: %w", err)
-	}
-
-	if err := dm.db.Save(docenteExistente).Error; err != nil {
-		return nil, fmt.Errorf("error al actualizar el docente")
-	}
-
-	return docenteExistente, nil
 }

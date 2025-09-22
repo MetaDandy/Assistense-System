@@ -10,14 +10,12 @@ import (
 type Asistencia struct {
 	ID               uuid.UUID `gorm:"type:uuid;primaryKey;"`
 	FechaHora        string    `gorm:"type:varchar(50);not null"`
-	FotoVerificacion string    `gorm:"type:text"`         // Base64 de la foto de verificación
-	Similitud        float64   `gorm:"type:decimal(5,4)"` // Porcentaje de similitud facial (0.0 - 1.0)
+	FotoVerificacion string    `gorm:"type:text"`
+	Similitud        float64   `gorm:"type:decimal(5,4)"`
 
-	// Relaciones
 	EstudianteID       uuid.UUID `gorm:"type:uuid;not null"`
 	SesionAsistenciaID uuid.UUID `gorm:"type:uuid;not null"`
 
-	// Referencias
 	Estudiante       Estudiante       `gorm:"foreignKey:EstudianteID"`
 	SesionAsistencia SesionAsistencia `gorm:"foreignKey:SesionAsistenciaID"`
 }

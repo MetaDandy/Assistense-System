@@ -14,7 +14,7 @@ type Estudiante struct {
 	Nombre         string    `gorm:"type:varchar(100);not null"`
 	Apellidos      string    `gorm:"type:varchar(100);not null"`
 	Registro       string    `gorm:"type:varchar(10);uniqueIndex;not null"`
-	FotoReferencia string    `gorm:"type:text"` // Base64 de la foto de referencia para reconocimiento facial
+	FotoReferencia string    `gorm:"type:text"`
 }
 
 type RegistrarEstudianteDto struct {
@@ -31,7 +31,7 @@ type ActualizarEstudiante struct {
 	FotoReferencia *string `json:"foto_referencia,omitempty"`
 }
 
-type EstudianteInterfaz interface {
+type EstudianteModeloInterfaz interface {
 	RegistrarEstudiante(estudiante *RegistrarEstudianteDto) (*Estudiante, error)
 	ActualizarEstudiante(id uuid.UUID, estudiante *ActualizarEstudiante) (*Estudiante, error)
 	MostrarEstudiantes() ([]Estudiante, error)
@@ -42,7 +42,7 @@ type EstudianteModelo struct {
 	db *gorm.DB
 }
 
-func NuevoEstudianteModelo(db *gorm.DB) EstudianteInterfaz {
+func NuevoEstudianteModelo(db *gorm.DB) EstudianteModeloInterfaz {
 	return &EstudianteModelo{db: db}
 }
 

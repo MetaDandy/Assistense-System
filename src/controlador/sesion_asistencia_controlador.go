@@ -14,11 +14,11 @@ import (
 type SesionAsistenciaControlador struct {
 	modelo           modelo.SesionAsistenciaInterfaz
 	asistenciaModelo modelo.AsistenciaInterfaz
-	estudianteModelo modelo.EstudianteInterfaz
+	estudianteModelo modelo.EstudianteModeloInterfaz
 	vista            *vista.SesionAsistenciaVistaHTML
 }
 
-func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, am modelo.AsistenciaInterfaz, em modelo.EstudianteInterfaz, v *vista.SesionAsistenciaVistaHTML) *SesionAsistenciaControlador {
+func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, am modelo.AsistenciaInterfaz, em modelo.EstudianteModeloInterfaz, v *vista.SesionAsistenciaVistaHTML) *SesionAsistenciaControlador {
 	return &SesionAsistenciaControlador{
 		modelo:           m,
 		asistenciaModelo: am,
@@ -27,7 +27,6 @@ func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, am mode
 	}
 }
 
-// esSesionActiva verifica si una sesión está activa considerando fecha y hora
 func esSesionActiva(fechaSesion, horaInicio, horaFin string) bool {
 	now := time.Now()
 	fechaActual := now.Format("2006-01-02")
@@ -37,12 +36,10 @@ func esSesionActiva(fechaSesion, horaInicio, horaFin string) bool {
 	return fechaSesion == fechaActual && horaActual >= horaInicio && horaActual <= horaFin
 }
 
-// GET /sesion-asistencia/registrar
 func (c *SesionAsistenciaControlador) MostrarRegistrar(w http.ResponseWriter, r *http.Request) {
 	c.vista.RenderizarRegistrar(w, nil)
 }
 
-// POST /sesion-asistencia/registrar
 func (c *SesionAsistenciaControlador) ProcesarRegistrar(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		c.vista.RenderizarRegistrar(w, map[string]interface{}{"Error": "Error en el formulario"})
@@ -92,7 +89,6 @@ func (c *SesionAsistenciaControlador) ProcesarRegistrar(w http.ResponseWriter, r
 	c.vista.RenderizarRegistrar(w, map[string]interface{}{"Exito": true})
 }
 
-// GET /sesion-asistencia/listar
 func (c *SesionAsistenciaControlador) ListarSesiones(w http.ResponseWriter, r *http.Request) {
 	// Obtener el DocenteID desde el JWT en la cookie
 	cookie, err := r.Cookie("token")
@@ -141,7 +137,6 @@ func (c *SesionAsistenciaControlador) ListarSesiones(w http.ResponseWriter, r *h
 	c.vista.RenderizarListar(w, map[string]interface{}{"Sesiones": sesionesView})
 }
 
-// GET /sesion-asistencia/{id}
 func (c *SesionAsistenciaControlador) MostrarDetalle(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	id, err := uuid.Parse(idStr)
@@ -165,7 +160,6 @@ func (c *SesionAsistenciaControlador) MostrarDetalle(w http.ResponseWriter, r *h
 	c.vista.RenderizarDetalle(w, data)
 }
 
-// GET /gestionar-sesiones - Mostrar formulario y lista en una sola vista
 func (c *SesionAsistenciaControlador) MostrarGestionarSesiones(w http.ResponseWriter, r *http.Request) {
 	// Obtener el DocenteID desde el JWT en la cookie
 	cookie, err := r.Cookie("token")
@@ -214,7 +208,6 @@ func (c *SesionAsistenciaControlador) MostrarGestionarSesiones(w http.ResponseWr
 	c.vista.RenderizarGestionarSesiones(w, map[string]interface{}{"Sesiones": sesionesView})
 }
 
-// POST /gestionar-sesiones - Procesar registro de nueva sesión
 func (c *SesionAsistenciaControlador) ProcesarGestionarSesiones(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		c.renderGestionarConError(w, r, "Error en el formulario")
@@ -264,7 +257,6 @@ func (c *SesionAsistenciaControlador) ProcesarGestionarSesiones(w http.ResponseW
 	c.renderGestionarConExito(w, r)
 }
 
-// Función auxiliar para mostrar la vista con error
 func (c *SesionAsistenciaControlador) renderGestionarConError(w http.ResponseWriter, r *http.Request, mensaje string) {
 	// Recargar las sesiones para mostrar la lista actualizada
 	cookie, _ := r.Cookie("token")
@@ -298,7 +290,6 @@ func (c *SesionAsistenciaControlador) renderGestionarConError(w http.ResponseWri
 	})
 }
 
-// Función auxiliar para mostrar la vista con éxito
 func (c *SesionAsistenciaControlador) renderGestionarConExito(w http.ResponseWriter, r *http.Request) {
 	// Recargar las sesiones para mostrar la lista actualizada
 	cookie, _ := r.Cookie("token")
@@ -332,7 +323,6 @@ func (c *SesionAsistenciaControlador) renderGestionarConExito(w http.ResponseWri
 	})
 }
 
-// GET /sesion-asistencia/{id}/registrar - Mostrar SELECTOR de estudiantes
 func (c *SesionAsistenciaControlador) MostrarRegistrarAsistencias(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	id, err := uuid.Parse(idStr)
@@ -392,7 +382,6 @@ func (c *SesionAsistenciaControlador) MostrarRegistrarAsistencias(w http.Respons
 	c.vista.RenderizarRegistrarAsistencias(w, data)
 }
 
-// POST /sesion-asistencia/{id}/registrar - Procesar selección de estudiante
 func (c *SesionAsistenciaControlador) ProcesarSeleccionEstudiante(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error en el formulario", http.StatusBadRequest)
@@ -412,7 +401,6 @@ func (c *SesionAsistenciaControlador) ProcesarSeleccionEstudiante(w http.Respons
 	http.Redirect(w, r, "/capturar-foto?sesion="+sesionIDStr+"&estudiante="+estudianteIDStr, http.StatusSeeOther)
 }
 
-// GET /sesion-asistencia/{id}/estudiante/{estudiante_id}/foto - Mostrar formulario de captura de foto
 func (c *SesionAsistenciaControlador) MostrarFormularioFoto(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	sesionIDStr := vars["id"]
@@ -460,7 +448,6 @@ func (c *SesionAsistenciaControlador) MostrarFormularioFoto(w http.ResponseWrite
 	c.vista.RenderizarFormularioFoto(w, data)
 }
 
-// GET /sesion-asistencia/{id}/listar - Mostrar lista de asistencias
 func (c *SesionAsistenciaControlador) MostrarListarAsistencias(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	id, err := uuid.Parse(idStr)

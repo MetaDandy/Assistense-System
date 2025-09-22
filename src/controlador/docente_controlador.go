@@ -8,7 +8,7 @@ import (
 )
 
 type DocenteControlador struct {
-	modelos   modelo.DocenteInterfaz
+	modelos   modelo.DocenteModeloInterfaz
 	vistaHTML *vista.DocenteVistaHTML
 }
 
@@ -21,10 +21,10 @@ type DocenteControladorInterfaz interface {
 	MostrarPanelDocente(w http.ResponseWriter, r *http.Request)
 }
 
-func NuevoDocenteControlador(modelos modelo.DocenteInterfaz) DocenteControladorInterfaz {
+func NuevoDocenteControlador(modelos modelo.DocenteModeloInterfaz, vista *vista.DocenteVistaHTML) DocenteControladorInterfaz {
 	return &DocenteControlador{
 		modelos:   modelos,
-		vistaHTML: vista.NuevoDocenteVistaHTML(),
+		vistaHTML: vista,
 	}
 }
 
@@ -83,7 +83,7 @@ func (dc *DocenteControlador) ProcesarRegistro(w http.ResponseWriter, r *http.Re
 		HttpOnly: true,
 	})
 
-	http.Redirect(w, r, "/panel-docente", http.StatusSeeOther)
+	dc.vistaHTML.RenderizarPanelDocente(w, nil)
 }
 
 // MostrarLogin muestra el formulario de login HTML
@@ -125,7 +125,7 @@ func (dc *DocenteControlador) ProcesarLogin(w http.ResponseWriter, r *http.Reque
 		HttpOnly: true,
 	})
 
-	http.Redirect(w, r, "/panel-docente", http.StatusSeeOther)
+	dc.vistaHTML.RenderizarPanelDocente(w, nil)
 }
 
 func (dc *DocenteControlador) MostrarPanelDocente(w http.ResponseWriter, r *http.Request) {

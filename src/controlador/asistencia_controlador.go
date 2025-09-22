@@ -13,11 +13,11 @@ import (
 
 type AsistenciaControlador struct {
 	modelo           modelo.AsistenciaInterfaz
-	estudianteModelo modelo.EstudianteInterfaz
+	estudianteModelo modelo.EstudianteModeloInterfaz
 	vista            *vista.AsistenciaVistaHTML
 }
 
-func NuevoAsistenciaControlador(m modelo.AsistenciaInterfaz, em modelo.EstudianteInterfaz, v *vista.AsistenciaVistaHTML) *AsistenciaControlador {
+func NuevoAsistenciaControlador(m modelo.AsistenciaInterfaz, em modelo.EstudianteModeloInterfaz, v *vista.AsistenciaVistaHTML) *AsistenciaControlador {
 	return &AsistenciaControlador{modelo: m, estudianteModelo: em, vista: v}
 }
 
