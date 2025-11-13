@@ -21,7 +21,7 @@ func SetupRoutes() *mux.Router {
 
 	sesionModelo := modelo.NuevaSesionAsistenciaModelo(config.DB)
 	sesionVista := vista.NuevaSesionAsistenciaVistaHTML()
-	asistenciaModelo := modelo.NuevoAsistenciaModelo(config.DB)
+	asistenciaModelo := modelo.NuevoAsistenciaModelo(config.DB, estudianteModelo, sesionModelo)
 	sesionControlador := controlador.NuevoSesionAsistenciaControlador(sesionModelo, estudianteModelo, sesionVista)
 
 	asistenciaVista := vista.NuevaAsistenciaVistaHTML()

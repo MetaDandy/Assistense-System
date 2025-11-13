@@ -3,6 +3,7 @@ package modelo
 import (
 	"time"
 
+	"github.com/MetaDandy/Assistense-System/src/modelo/cadena_responsabilidad"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -34,28 +35,42 @@ type AsistenciaInterfaz interface {
 }
 
 type AsistenciaModelo struct {
-	db *gorm.DB
+	db               *gorm.DB
+	estudianteModelo EstudianteModeloInterfaz
+	sesionModelo     SesionAsistenciaInterfaz
 }
 
-func NuevoAsistenciaModelo(db *gorm.DB) AsistenciaInterfaz {
-	return &AsistenciaModelo{db: db}
+func NuevoAsistenciaModelo(db *gorm.DB, estudianteModelo EstudianteModeloInterfaz, sesionModelo SesionAsistenciaInterfaz) AsistenciaInterfaz {
+	return &AsistenciaModelo{
+		db:               db,
+		estudianteModelo: estudianteModelo,
+		sesionModelo:     sesionModelo,
+	}
 }
 
 func (am *AsistenciaModelo) RegistrarAsistencia(dto *RegistrarAsistenciaDto) (*Asistencia, error) {
-	// Verificar si ya existe asistencia para este estudiante en esta sesión
-	existeAsistencia, err := am.VerificarAsistenciaExistente(dto.EstudianteID, dto.SesionAsistenciaID)
-	if err != nil {
-		return nil, err
-	}
-	if existeAsistencia {
-		return nil, gorm.ErrDuplicatedKey
+	// Crear la solicitud que viajará por la cadena de validadores
+	solicitud := &cadena_responsabilidad.SolicitudAsistencia{
+		FotoVerificacion: dto.FotoVerificacion,
+		SesionID:         dto.SesionAsistenciaID,
+		EstudianteID:     dto.EstudianteID,
 	}
 
+	// Construir la cadena de validadores
+	primerValidador := am.construirCadenaValidadores()
+
+	// Validar usando la cadena de responsabilidad
+	// Iniciar la cadena desde el primer validador (ValidadorImagen)
+	if err := primerValidador.Validar(solicitud); err != nil {
+		return nil, err
+	}
+
+	// Si todas las validaciones pasaron, registrar la asistencia
 	asistencia := &Asistencia{
 		ID:                 uuid.New(),
 		FechaHora:          time.Now().Format("2006-01-02 15:04:05"),
 		FotoVerificacion:   dto.FotoVerificacion,
-		Similitud:          dto.Similitud,
+		Similitud:          solicitud.Similitud,
 		EstudianteID:       dto.EstudianteID,
 		SesionAsistenciaID: dto.SesionAsistenciaID,
 	}
@@ -65,6 +80,55 @@ func (am *AsistenciaModelo) RegistrarAsistencia(dto *RegistrarAsistenciaDto) (*A
 	}
 
 	return asistencia, nil
+}
+
+// construirCadenaValidadores construye la cadena de responsabilidad con los validadores
+// Sigue el patrón: Validador → ValidadorImagen → ValidadorUUID → ValidadorEstudiante →
+// ValidadorFotoReferencia → ValidadorSimilitud → ValidadorDuplicado
+func (am *AsistenciaModelo) construirCadenaValidadores() cadena_responsabilidad.Validador {
+	// Definir callbacks para evitar ciclos de importación
+
+	// Callback para verificar existencia del estudiante
+	callbackEstudiante := func(estudianteID uuid.UUID) (string, error) {
+		_, err := am.estudianteModelo.ObtenerEstudiantePorID(estudianteID)
+		if err != nil {
+			return "", err
+		}
+		return "", nil
+	}
+
+	// Callback para obtener foto de referencia
+	callbackFotoRef := func(estudianteID uuid.UUID) (string, error) {
+		estudiante, err := am.estudianteModelo.ObtenerEstudiantePorID(estudianteID)
+		if err != nil {
+			return "", err
+		}
+		return estudiante.FotoReferencia, nil
+	}
+
+	// Callback para verificar asistencia duplicada
+	callbackDuplicado := func(estudianteID uuid.UUID, sesionID uuid.UUID) (bool, error) {
+		return am.VerificarAsistenciaExistente(estudianteID, sesionID)
+	}
+
+	// Crear instancias de cada validador usando el paquete cadena_responsabilidad
+	v1 := cadena_responsabilidad.NewValidadorImagen()
+	v2 := cadena_responsabilidad.NewValidadorUUID()
+	v3 := cadena_responsabilidad.NewValidadorEstudiante(callbackEstudiante)
+	v4 := cadena_responsabilidad.NewValidadorFotoReferencia(callbackFotoRef)
+	v5 := cadena_responsabilidad.NewValidadorSimilitud(callbackFotoRef)
+	v6 := cadena_responsabilidad.NewValidadorDuplicado(callbackDuplicado)
+
+	// Encadenar los validadores: v1 → v2 → v3 → v4 → v5 → v6
+	// SetSiguiente retorna el siguiente, permitiendo encadenamiento fluido
+	v1.SetSiguiente(v2)
+	v2.SetSiguiente(v3)
+	v3.SetSiguiente(v4)
+	v4.SetSiguiente(v5)
+	v5.SetSiguiente(v6)
+
+	// Retornar el primer manejador de la cadena
+	return v1
 }
 
 func (am *AsistenciaModelo) ObtenerAsistenciasPorSesion(sesionID uuid.UUID) ([]Asistencia, error) {
