@@ -2,9 +2,9 @@ package controlador
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/MetaDandy/Assistense-System/helper"
+	"github.com/MetaDandy/Assistense-System/src/controlador/sesion_estado"
 	"github.com/MetaDandy/Assistense-System/src/modelo"
 	"github.com/MetaDandy/Assistense-System/src/vista"
 	"github.com/google/uuid"
@@ -35,15 +35,6 @@ func NuevoSesionAsistenciaControlador(m modelo.SesionAsistenciaInterfaz, em mode
 		estudianteModelo: em,
 		vista:            v,
 	}
-}
-
-func esSesionActiva(fechaSesion, horaInicio, horaFin string) bool {
-	now := time.Now()
-	fechaActual := now.Format("2006-01-02")
-	horaActual := now.Format("15:04")
-
-	// Solo está activa si es hoy Y está dentro del rango de horas
-	return fechaSesion == fechaActual && horaActual >= horaInicio && horaActual <= horaFin
 }
 
 func (c *SesionAsistenciaControlador) MostrarRegistrar(w http.ResponseWriter, r *http.Request) {
@@ -133,8 +124,13 @@ func (c *SesionAsistenciaControlador) ListarSesiones(w http.ResponseWriter, r *h
 	var sesionesView []SesionView
 
 	for _, s := range sesiones {
-		// Verificar si la sesión está activa considerando fecha y hora
-		activa := esSesionActiva(s.Fecha, s.HoraInicio, s.HoraFin)
+		// Verificar si la sesión está activa usando el patrón State
+		ctx := &sesion_estado.Sesion{
+			Fecha:      s.Fecha,
+			HoraInicio: s.HoraInicio,
+			HoraFin:    s.HoraFin,
+		}
+		activa := ctx.CanRegistrarAsistencia()
 
 		sesionesView = append(sesionesView, SesionView{
 			ID:         s.ID.String(),
@@ -160,7 +156,13 @@ func (c *SesionAsistenciaControlador) MostrarDetalle(w http.ResponseWriter, r *h
 		return
 	}
 
-	activa := esSesionActiva(sesion.Fecha, sesion.HoraInicio, sesion.HoraFin)
+	// Verificar si la sesión está activa usando el patrón State
+	ctx := &sesion_estado.Sesion{
+		Fecha:      sesion.Fecha,
+		HoraInicio: sesion.HoraInicio,
+		HoraFin:    sesion.HoraFin,
+	}
+	activa := ctx.CanRegistrarAsistencia()
 
 	data := map[string]interface{}{
 		"Sesion": sesion,
@@ -204,8 +206,13 @@ func (c *SesionAsistenciaControlador) MostrarGestionarSesiones(w http.ResponseWr
 	var sesionesView []SesionView
 
 	for _, s := range sesiones {
-		// Verificar si la sesión está activa considerando fecha y hora
-		activa := esSesionActiva(s.Fecha, s.HoraInicio, s.HoraFin)
+		// Verificar si la sesión está activa usando el patrón State
+		ctx := &sesion_estado.Sesion{
+			Fecha:      s.Fecha,
+			HoraInicio: s.HoraInicio,
+			HoraFin:    s.HoraFin,
+		}
+		activa := ctx.CanRegistrarAsistencia()
 
 		sesionesView = append(sesionesView, SesionView{
 			ID:         s.ID.String(),
@@ -285,7 +292,13 @@ func (c *SesionAsistenciaControlador) renderGestionarConError(w http.ResponseWri
 	var sesionesView []SesionView
 
 	for _, s := range sesiones {
-		activa := esSesionActiva(s.Fecha, s.HoraInicio, s.HoraFin)
+		// Verificar si la sesión está activa usando el patrón State
+		ctx := &sesion_estado.Sesion{
+			Fecha:      s.Fecha,
+			HoraInicio: s.HoraInicio,
+			HoraFin:    s.HoraFin,
+		}
+		activa := ctx.CanRegistrarAsistencia()
 		sesionesView = append(sesionesView, SesionView{
 			ID:         s.ID.String(),
 			Fecha:      s.Fecha,
@@ -318,7 +331,13 @@ func (c *SesionAsistenciaControlador) renderGestionarConExito(w http.ResponseWri
 	var sesionesView []SesionView
 
 	for _, s := range sesiones {
-		activa := esSesionActiva(s.Fecha, s.HoraInicio, s.HoraFin)
+		// Verificar si la sesión está activa usando el patrón State
+		ctx := &sesion_estado.Sesion{
+			Fecha:      s.Fecha,
+			HoraInicio: s.HoraInicio,
+			HoraFin:    s.HoraFin,
+		}
+		activa := ctx.CanRegistrarAsistencia()
 		sesionesView = append(sesionesView, SesionView{
 			ID:         s.ID.String(),
 			Fecha:      s.Fecha,
@@ -348,9 +367,13 @@ func (c *SesionAsistenciaControlador) MostrarRegistrarAsistencias(w http.Respons
 		return
 	}
 
-	// Verificar que la sesión esté activa
-	activa := esSesionActiva(sesion.Fecha, sesion.HoraInicio, sesion.HoraFin)
-	if !activa {
+	// Verificar que la sesión esté activa usando el patrón State
+	ctx := &sesion_estado.Sesion{
+		Fecha:      sesion.Fecha,
+		HoraInicio: sesion.HoraInicio,
+		HoraFin:    sesion.HoraFin,
+	}
+	if !ctx.CanRegistrarAsistencia() {
 		http.Error(w, "Solo se pueden registrar asistencias en sesiones activas", http.StatusForbidden)
 		return
 	}
@@ -442,8 +465,13 @@ func (c *SesionAsistenciaControlador) MostrarFormularioFoto(w http.ResponseWrite
 		return
 	}
 
-	// Verificar que la sesión esté activa
-	activa := esSesionActiva(sesion.Fecha, sesion.HoraInicio, sesion.HoraFin)
+	// Verificar que la sesión esté activa usando el patrón State
+	ctx := &sesion_estado.Sesion{
+		Fecha:      sesion.Fecha,
+		HoraInicio: sesion.HoraInicio,
+		HoraFin:    sesion.HoraFin,
+	}
+	activa := ctx.CanVerRostro()
 
 	// Verificar que el estudiante tenga foto de referencia
 	tieneFotoReferencia := estudiante.FotoReferencia != ""
