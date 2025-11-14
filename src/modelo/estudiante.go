@@ -1,35 +1,19 @@
 package modelo
 
 import (
-	"fmt"
-
-	"github.com/MetaDandy/Assistense-System/helper"
+	"github.com/MetaDandy/Assistense-System/src/modelo/template_method"
 	"github.com/google/uuid"
-	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
-type Estudiante struct {
-	ID             uuid.UUID `gorm:"type:uuid;primaryKey;"`
-	Nombre         string    `gorm:"type:varchar(100);not null"`
-	Apellidos      string    `gorm:"type:varchar(100);not null"`
-	Registro       string    `gorm:"type:varchar(10);uniqueIndex;not null"`
-	FotoReferencia string    `gorm:"type:text"`
-}
+// Estudiante es el alias del modelo en template_method
+type Estudiante = template_method.Estudiante
 
-type RegistrarEstudianteDto struct {
-	Nombre         string `json:"nombre" binding:"required"`
-	Apellidos      string `json:"apellidos" binding:"required"`
-	Registro       string `json:"registro" binding:"required,max=10"`
-	FotoReferencia string `json:"foto_referencia,omitempty"` // Base64 de la foto
-}
+// RegistrarEstudianteDto es el alias del DTO en template_method
+type RegistrarEstudianteDto = template_method.RegistrarEstudianteDto
 
-type ActualizarEstudiante struct {
-	Nombre         *string `json:"nombre" binding:"required"`
-	Apellidos      *string `json:"apellidos" binding:"required"`
-	Registro       *string `json:"registro" binding:"required,max=10"`
-	FotoReferencia *string `json:"foto_referencia,omitempty"`
-}
+// ActualizarEstudiante es el alias del DTO en template_method
+type ActualizarEstudiante = template_method.ActualizarEstudianteDto
 
 type EstudianteModeloInterfaz interface {
 	RegistrarEstudiante(estudiante *RegistrarEstudianteDto) (*Estudiante, error)
@@ -46,58 +30,39 @@ func NuevoEstudianteModelo(db *gorm.DB) EstudianteModeloInterfaz {
 	return &EstudianteModelo{db: db}
 }
 
-func (em *EstudianteModelo) RegistrarEstudiante(estudiante *RegistrarEstudianteDto) (*Estudiante, error) {
-	var existe Estudiante
+func (em *EstudianteModelo) RegistrarEstudiante(datos *RegistrarEstudianteDto) (*Estudiante, error) {
+	// Crear el procesador específico de registrar
+	proc := template_method.NewProcesadorRegistrar(em.db, datos)
 
-	if err := em.db.Where("registro = ?", estudiante.Registro).First(&existe).Error; err == nil {
-		return nil, gorm.ErrRegistered
-	}
+	// Crear la plantilla base
+	base := template_method.NewProcesadorBase()
 
-	// Validar foto de referencia si se proporciona
-	if estudiante.FotoReferencia != "" {
-		if err := helper.ValidarImagenBase64(estudiante.FotoReferencia); err != nil {
-			return nil, fmt.Errorf("foto de referencia inválida: %v", err)
-		}
-	}
-
-	nuevoEstudiante := Estudiante{}
-	copier.Copy(&nuevoEstudiante, estudiante)
-	nuevoEstudiante.ID = uuid.New()
-
-	if err := em.db.Create(&nuevoEstudiante).Error; err != nil {
+	// Ejecutar el template method
+	if err := base.Procesar(proc); err != nil {
 		return nil, err
 	}
 
-	return &nuevoEstudiante, nil
+	// Retornar resultado
+	return proc.ObtenerResultado().(*Estudiante), nil
 }
 
-func (em *EstudianteModelo) ActualizarEstudiante(id uuid.UUID, estudiante *ActualizarEstudiante) (*Estudiante, error) {
-	var existente Estudiante
+func (em *EstudianteModelo) ActualizarEstudiante(id uuid.UUID, datos *ActualizarEstudiante) (*Estudiante, error) {
+	// Convertir alias al tipo real
+	dtoTemplate := (*template_method.ActualizarEstudianteDto)(datos)
 
-	if err := em.db.First(&existente, "id = ?", id).Error; err != nil {
+	// Crear el procesador específico de actualizar
+	proc := template_method.NewProcesadorActualizar(em.db, id.String(), dtoTemplate)
+
+	// Crear la plantilla base
+	base := template_method.NewProcesadorBase()
+
+	// Ejecutar el template method
+	if err := base.Procesar(proc); err != nil {
 		return nil, err
 	}
 
-	// Validar foto de referencia si se proporciona
-	if estudiante.FotoReferencia != nil && *estudiante.FotoReferencia != "" {
-		if err := helper.ValidarImagenBase64(*estudiante.FotoReferencia); err != nil {
-			return nil, fmt.Errorf("foto de referencia inválida: %v", err)
-		}
-	}
-
-	opt := copier.Option{
-		IgnoreEmpty: true,
-		DeepCopy:    true,
-	}
-
-	if err := copier.CopyWithOption(&existente, estudiante, opt); err != nil {
-		return nil, fmt.Errorf("failed to update fields: %w", err)
-	}
-	if err := em.db.Save(&existente).Error; err != nil {
-		return nil, err
-	}
-
-	return &existente, nil
+	// Retornar resultado
+	return proc.ObtenerResultado().(*Estudiante), nil
 }
 
 func (em *EstudianteModelo) MostrarEstudiantes() ([]Estudiante, error) {
